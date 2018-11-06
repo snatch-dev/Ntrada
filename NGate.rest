@@ -1,0 +1,31 @@
+@url = http://localhost:5000
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMzgwZWI0YjVhODk0NmYwODM2YTQ3YzEwYzc5ZDBhOCIsInVuaXF1ZV9uYW1lIjoiMTM4MGViNGI1YTg5NDZmMDgzNmE0N2MxMGM3OWQwYTgiLCJqdGkiOiI3MTAwZGExZS0zZWYzLTQ4NjUtYmRiZC0xN2ZkNjVhNTMzMDAiLCJpYXQiOiIxNTQxNDQ5OTU5MDQxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiYWRtaW4iLCJuYmYiOjE1NDE0NDk5NTksImV4cCI6MTU0MTQ1MTc1OSwiaXNzIjoiZHNob3AtaWRlbnRpdHktc2VydmljZSJ9.4_qBsF4U56JOkRkxKkAMt4zOPZAt7PGFNq8jMrosxfc
+@refreshToken = xxxxxxxxxxxxxxxxxx
+###
+POST {{url}}/products
+Content-Type: application/application/json
+
+{
+	"name": "My product 12",
+	"description": "My product description",
+	"vendor": "My company",
+	"price": 2500,
+    "test": "aaa"
+}
+
+###
+POST {{url}}/orders
+authorization: Bearer {{accessToken}}
+content-type: application/json
+
+{
+}
+
+###
+POST {{url}}/orders/sync
+authorization: Bearer {{accessToken}}
+content-type: application/json
+
+{
+	"test": 123
+}
