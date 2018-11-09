@@ -75,25 +75,18 @@ namespace NGate.Framework
         private void BuildRoutes(IRouteBuilder routeBuilder, Route route)
         {
             var method = (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
-            var path = (string.IsNullOrWhiteSpace(route.Path) ? "/" : route.Path);
+            var path = (string.IsNullOrWhiteSpace(route.Upstream) ? "/" : route.Upstream);
             _methods[method](routeBuilder, path, route);
         }
 
         private Func<HttpRequest, HttpResponse, RouteData, Task> UseDispatcherTypeAsync(Route route)
             => async (request, response, data) =>
             {
-                if (_configuration.Config.Authentication?.Global == true && !route.Auth == false)
+                if (!await CanExecuteAsync(request, response, data, route))
                 {
-                    await request.HttpContext.AuthenticateAsync();
-                    foreach (var claim in route.Claims ?? Enumerable.Empty<string>())
-                    {
-                        if (request.HttpContext.User.Claims.All(c => c.Type != claim))
-                        {
-                            response.StatusCode = 401;
-                            return;
-                        }
-                    }
+                    return;
                 }
+
                 var dispatcher = _extensions["dispatcher"];
                 var executionData = await _requestProcessor.ProcessAsync(route, request, response, data);
                 await dispatcher.ExecuteAsync(executionData);
@@ -102,37 +95,24 @@ namespace NGate.Framework
         private Func<HttpRequest, HttpResponse, RouteData, Task> UseLocalTypeAsync(Route route)
             => async (request, response, data) =>
             {
-                if (_configuration.Config.Authentication?.Global == true && !route.Auth == false)
+                if (!await CanExecuteAsync(request, response, data, route))
                 {
-                    await request.HttpContext.AuthenticateAsync();
-                    foreach (var claim in route.Claims ?? Enumerable.Empty<string>())
-                    {
-                        if (request.HttpContext.User.Claims.All(c => c.Type != claim))
-                        {
-                            response.StatusCode = 401;
-                            return;
-                        }
-                    }
+                    return;
                 }
+
                 await response.WriteAsync(route.Return);
             };
+
 
         private Func<HttpRequest, HttpResponse, RouteData, Task> UseRequestTypeAsync(Route route)
             => async (request, response, data) =>
             {
-                if (_configuration.Config.Authentication?.Global == true && !route.Auth == false)
+                if (!await CanExecuteAsync(request, response, data, route))
                 {
-                    await request.HttpContext.AuthenticateAsync();
-                    foreach (var claim in route.Claims ?? Enumerable.Empty<string>())
-                    {
-                        if (request.HttpContext.User.Claims.All(c => c.Type != claim))
-                        {
-                            response.StatusCode = 401;
-                            return;
-                        }
-                    }
+                    return;
                 }
-                if (route.Upstream == null)
+
+                if (route.Downstream == null)
                 {
                     return;
                 }
@@ -154,30 +134,54 @@ namespace NGate.Framework
                 await response.WriteAsync(content);
             };
 
+        private async Task<bool> CanExecuteAsync(HttpRequest request, HttpResponse response,
+            RouteData data, Route route)
+            => await IsAuthorizedAsync(request, response, route);
+
+        private async Task<bool> IsAuthorizedAsync(HttpRequest request, HttpResponse response, Route route)
+        {
+            if (_configuration.Config.Authentication?.Global != true || (route.Auth.HasValue && route.Auth == false))
+            {
+                return true;
+            }
+
+            await request.HttpContext.AuthenticateAsync();
+            if (route.Claims == null || !route.Claims.Any())
+            {
+                return true;
+            }
+
+            var hasClaims = route.Claims.All(claim => request.HttpContext.User.Claims
+                .Any(c => c.Type == claim.Key && c.Value == claim.Value));
+            if (hasClaims)
+            {
+                return true;
+            }
+
+            response.StatusCode = 401;
+
+            return false;
+        }
+
         private Func<Task<HttpResponseMessage>> GetRequest(Route route, ExecutionData executionData)
         {
             var url = executionData.Url;
             var httpClient = _serviceProvider.GetService<IHttpClientFactory>().CreateClient();
             var payload = GetPayload(executionData.Payload, executionData.ContentType);
-            var method = (string.IsNullOrWhiteSpace(route.UpstreamMethod) ? route.Method : route.UpstreamMethod)
+            var method = (string.IsNullOrWhiteSpace(route.DownstreamMethod) ? route.Method : route.DownstreamMethod)
                 .ToLowerInvariant();
             switch (method)
             {
                 case "get":
                     return () => httpClient.GetAsync(url);
-                    break;
                 case "post":
                     return () => httpClient.PostAsync(url, payload);
-                    break;
                 case "put":
                     return () => httpClient.PutAsJsonAsync(url, payload);
-                    break;
                 case "delete":
                     return () => httpClient.DeleteAsync(url);
-                    break;
                 case "patch":
                     return () => httpClient.PatchAsync(url, payload);
-                    break;
             }
 
             return null;

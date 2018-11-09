@@ -33,11 +33,11 @@ namespace NGate.Framework
     public class Route
     {
         public bool GenerateResourceId { get; set; }
-        public string Path { get; set; }
+        public string Upstream { get; set; }
         public string Method { get; set; }
         public string Type { get; set; }
-        public string Upstream { get; set; }
-        public string UpstreamMethod { get; set; }
+        public string Downstream { get; set; }
+        public string DownstreamMethod { get; set; }
         public string Return { get; set; }
         public string Use { get; set; }
         public string Payload { get; set; }
@@ -45,7 +45,7 @@ namespace NGate.Framework
         public string Exchange { get; set; }
         public string RoutingKey { get; set; }
         public bool? Auth { get; set; }
-        public IEnumerable<string> Claims { get; set; }
+        public IDictionary<string, string> Claims { get; set; }
         public IEnumerable<string> Set { get; set; }
         public IEnumerable<string> Transform { get; set; }
     }

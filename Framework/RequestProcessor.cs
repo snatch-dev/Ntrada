@@ -51,7 +51,7 @@ namespace NGate.Framework
             using (var reader = new StreamReader(request.Body))
             {
                 var content = await reader.ReadToEndAsync();
-                var command = _messages.ContainsKey(route.Path)
+                var command = _messages.ContainsKey(route.Upstream)
                     ? GetObjectFromPayload(route, content)
                     : GetObject(content);
 
@@ -88,7 +88,7 @@ namespace NGate.Framework
 
         private object GetObjectFromPayload(Route route, string content)
         {
-            var payloadValue = _messages[route.Path];
+            var payloadValue = _messages[route.Upstream];
             var request = JsonConvert.DeserializeObject(content, payloadValue.GetType());
             var payloadValues = (IDictionary<string, object>) payloadValue;
             var requestValues = (IDictionary<string, object>) request;
@@ -126,7 +126,7 @@ namespace NGate.Framework
                 var json = File.ReadAllText(filePath);
                 dynamic expandoObject = new ExpandoObject();
                 JsonConvert.PopulateObject(json, expandoObject);
-                messages.Add(route.Path, expandoObject);
+                messages.Add(route.Upstream, expandoObject);
             }
 
             return messages;
@@ -134,18 +134,18 @@ namespace NGate.Framework
 
         private string GetUrl(Route route, HttpRequest request, RouteData data)
         {
-            if (string.IsNullOrWhiteSpace(route.Upstream))
+            if (string.IsNullOrWhiteSpace(route.Downstream))
             {
                 return null;
             }
 
-            var basePath = route.Upstream.Contains("/")
-                ? route.Upstream.Split('/')[0]
-                : route.Upstream;
+            var basePath = route.Downstream.Contains("/")
+                ? route.Downstream.Split('/')[0]
+                : route.Downstream;
 
             var servicePath = _configuration.Services.TryGetValue(basePath, out var service)
-                ? route.Upstream.Replace(basePath, service.Url)
-                : route.Upstream;
+                ? route.Downstream.Replace(basePath, service.Url)
+                : route.Downstream;
 
             var upstream = servicePath.StartsWith("http") ? servicePath : $"http://{servicePath}";
 

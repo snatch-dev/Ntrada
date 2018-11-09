@@ -12,21 +12,21 @@ extensions:
 
 routes:
   home:
-  - path: /
+  - upstream: /
     method: GET
     type: local
     return: "Welcome to API Gateway"
     auth: false
   products:
-  - path: /products
+  - upstream: /products
     method: GET
     type: request
-    upstream: products-service/products
-  - path: /products/{productId}
+    downstream: products-service/products
+  - upstream: /products/{productId}
     method: GET
     type: request
-    upstream: products-service/products/{productId}
-  - path: /products
+    downstream: products-service/products/{productId}
+  - upstream: /products
     method: POST
     type: dispatcher
     exchange: "products.create_product"
@@ -34,17 +34,17 @@ routes:
     payload: create_product.json
     scheme: create_product.scheme.json
     claims:
-      - admin
+      http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name: admin
   orders:
-  - path: /orders
+  - upstream: /orders
     method: GET
     type: request
-    upstream: https://api.42.do/training/plans.json
-  - path: /orders/{orderId}
+    downstream: https://api.42.do/training/plans.json
+  - upstream: /orders/{orderId}
     method: GET
     type: request
-    upstream: orders-service/orders/{orderId}
-  - path: /orders
+    downstream: orders-service/orders/{orderId}
+  - upstream: /orders
     method: POST
     type: dispatcher
     exchange: "orders.create_order"
@@ -55,12 +55,12 @@ routes:
       - test:nothing
     payload: create_order.json
     scheme: create_order.scheme.json
-  - path: /orders/sync
+  - upstream: /orders/sync
     generate_resource_id: true
     method: POST
-    upstream_method: PUT
+    downstream_method: PUT
     type: request
-    upstream: orders-service/orders/{orderId}
+    downstream: orders-service/orders/{orderId}
     set:
     - customerId:{user_id}
     transform:

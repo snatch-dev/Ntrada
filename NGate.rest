@@ -3,14 +3,15 @@
 @refreshToken = xxxxxxxxxxxxxxxxxx
 ###
 POST {{url}}/products
+authorization: Bearer {{accessToken}}
 Content-Type: application/application/json
 
 {
-	"name": "My product 12",
-	"description": "My product description",
+	"name": "My product 1",
+	"description": "My product 1 description",
 	"vendor": "My company",
 	"price": 2500,
-    "test": "aaa"
+    "test": "test field to be removed"
 }
 
 ###
