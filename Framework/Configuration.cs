@@ -13,7 +13,9 @@ namespace NGate.Framework
     public class Config
     {
         public bool GenerateResourceId { get; set; }
+        public bool? PassQueryString { get; set; }
         public Authentication Authentication { get; set; }
+        public string PayloadsPath { get; set; }
     }
 
     public class Authentication
@@ -22,6 +24,19 @@ namespace NGate.Framework
         public bool Global { get; set; }
         public string Key { get; set; }
         public string Issuer { get; set; }
+        public bool ValidateIssuer { get; set; }
+        public IEnumerable<string> Issuers { get; set; }
+        public string Audience { get; set; }
+        public IEnumerable<string> Audiences { get; set; }
+        public bool ValidateAudience { get; set; }
+        public bool ValidateLifetime { get; set; }
+        public Claims Claims { get; set; }
+    }
+
+    public class Claims
+    {
+        public IDictionary<string, string> Map { get; set; }
+        public IDictionary<string, string> Required { get; set; }
     }
 
     public class RoutesGroup
@@ -32,14 +47,14 @@ namespace NGate.Framework
 
     public class Route
     {
-        public bool GenerateResourceId { get; set; }
+        public bool? GenerateResourceId { get; set; }
         public string Upstream { get; set; }
         public string Method { get; set; }
-        public string Type { get; set; }
+        public string Use { get; set; }
         public string Downstream { get; set; }
         public string DownstreamMethod { get; set; }
-        public string Return { get; set; }
-        public string Use { get; set; }
+        public bool? PassQueryString { get; set; }
+        public string ReturnValue { get; set; }
         public string Payload { get; set; }
         public string Scheme { get; set; }
         public string Exchange { get; set; }
@@ -49,7 +64,7 @@ namespace NGate.Framework
         public IEnumerable<string> Set { get; set; }
         public IEnumerable<string> Transform { get; set; }
     }
-    
+
     public class Extension
     {
         public string Use { get; set; }

@@ -76,8 +76,8 @@ namespace NGate.Framework
                         commandValues.Add(after, value);
                     }
                 }
-                
-                if (_configuration.Config.GenerateResourceId || route.GenerateResourceId)
+
+                if (_configuration.Config.GenerateResourceId && (route.GenerateResourceId != false))
                 {
                     commandValues.Add("id", resourceId);
                 }
@@ -103,21 +103,30 @@ namespace NGate.Framework
 
             return request;
         }
-        
+
         private object GetObject(string content)
         {
             dynamic payload = new ExpandoObject();
             JsonConvert.PopulateObject(content, payload);
-            
+
             return JsonConvert.DeserializeObject(content, payload.GetType());
         }
 
         private Dictionary<string, ExpandoObject> LoadMessages(Configuration configuration)
         {
             var messages = new Dictionary<string, ExpandoObject>();
+            var payloadsPath = configuration.Config.PayloadsPath;
+            var fullPayloadsPath = string.IsNullOrWhiteSpace(payloadsPath)
+                ? string.Empty
+                : (payloadsPath.EndsWith("/") ? payloadsPath : $"{payloadsPath}/");
             foreach (var route in configuration.Routes.SelectMany(r => r.Value))
             {
-                var filePath = $"Payloads/{route.Payload}";
+                if (string.IsNullOrWhiteSpace(route.Payload))
+                {
+                    continue;
+                }
+
+                var filePath = $"{fullPayloadsPath}{route.Payload}";
                 if (!File.Exists(filePath))
                 {
                     continue;
@@ -156,7 +165,10 @@ namespace NGate.Framework
                 stringBuilder.Replace($"{value.Key}", value.Value.ToString());
             }
 
-            stringBuilder.Append(request.QueryString.ToString());
+            if (_configuration.Config.PassQueryString != false && route.PassQueryString != false)
+            {
+                stringBuilder.Append(request.QueryString.ToString());
+            }
 
             return stringBuilder.ToString();
         }

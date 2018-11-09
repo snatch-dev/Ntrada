@@ -6,10 +6,10 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using NGate.Extensions.RabbitMq;
 
@@ -31,17 +31,17 @@ namespace NGate.Framework
             _configuration = configuration;
             var processors = new Dictionary<string, Func<Route, Func<HttpRequest, HttpResponse, RouteData, Task>>>
             {
-                ["local"] = UseLocalTypeAsync,
-                ["request"] = UseRequestTypeAsync,
-                ["dispatcher"] = UseDispatcherTypeAsync
+                ["return_value"] = UseReturnValueAsync,
+                ["downstream"] = UseDownstreamAsync,
+                ["dispatcher"] = UseDispatcherAsync
             };
             _methods = new Dictionary<string, Action<IRouteBuilder, string, Route>>
             {
-                ["get"] = (builder, path, route) => builder.MapGet(path, processors[route.Type](route)),
-                ["post"] = (builder, path, route) => builder.MapPost(path, processors[route.Type](route)),
-                ["put"] = (builder, path, route) => builder.MapPut(path, processors[route.Type](route)),
-                ["delete"] = (builder, path, route) => builder.MapDelete(path, processors[route.Type](route)),
-                ["patch"] = (builder, path, route) => builder.MapVerb("patch", path, processors[route.Type](route))
+                ["get"] = (builder, path, route) => builder.MapGet(path, processors[route.Use](route)),
+                ["post"] = (builder, path, route) => builder.MapPost(path, processors[route.Use](route)),
+                ["put"] = (builder, path, route) => builder.MapPut(path, processors[route.Use](route)),
+                ["delete"] = (builder, path, route) => builder.MapDelete(path, processors[route.Use](route)),
+                ["patch"] = (builder, path, route) => builder.MapVerb("patch", path, processors[route.Use](route))
             };
             _extensions = new Dictionary<string, IExtension>
             {
@@ -79,7 +79,7 @@ namespace NGate.Framework
             _methods[method](routeBuilder, path, route);
         }
 
-        private Func<HttpRequest, HttpResponse, RouteData, Task> UseDispatcherTypeAsync(Route route)
+        private Func<HttpRequest, HttpResponse, RouteData, Task> UseDispatcherAsync(Route route)
             => async (request, response, data) =>
             {
                 if (!await CanExecuteAsync(request, response, data, route))
@@ -92,7 +92,7 @@ namespace NGate.Framework
                 await dispatcher.ExecuteAsync(executionData);
             };
 
-        private Func<HttpRequest, HttpResponse, RouteData, Task> UseLocalTypeAsync(Route route)
+        private Func<HttpRequest, HttpResponse, RouteData, Task> UseReturnValueAsync(Route route)
             => async (request, response, data) =>
             {
                 if (!await CanExecuteAsync(request, response, data, route))
@@ -100,11 +100,11 @@ namespace NGate.Framework
                     return;
                 }
 
-                await response.WriteAsync(route.Return);
+                await response.WriteAsync(route.ReturnValue);
             };
 
 
-        private Func<HttpRequest, HttpResponse, RouteData, Task> UseRequestTypeAsync(Route route)
+        private Func<HttpRequest, HttpResponse, RouteData, Task> UseDownstreamAsync(Route route)
             => async (request, response, data) =>
             {
                 if (!await CanExecuteAsync(request, response, data, route))
@@ -144,8 +144,8 @@ namespace NGate.Framework
             {
                 return true;
             }
-
-            await request.HttpContext.AuthenticateAsync();
+            
+            var result = await request.HttpContext.AuthenticateAsync();
             if (route.Claims == null || !route.Claims.Any())
             {
                 return true;

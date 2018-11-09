@@ -1,11 +1,24 @@
 config:
   generate_resource_id: true
+  pass_query_string: true
+  payloads_path: payloads/
   authentication:
     type: jwt
     global: true
     issuer: dshop-identity-service
+    issuers:
+    validate_issuer: true
+    audience:
+    audiences:
+    validate_audience: false
+    validate_lifetime: false
     key: JLBMU2VbJZmt42sUwByUpJJF6Y5mG2gPNU9sQFUpJFcGFJdyKxskR3bxh527kax2UcXHvB
-
+    claims:
+      map:
+        role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
+      required:
+        role: admin
+        
 extensions:
   dispatcher:
     use: rabbitmq_dispatcher
@@ -14,39 +27,39 @@ routes:
   home:
   - upstream: /
     method: GET
-    type: local
-    return: "Welcome to API Gateway"
+    use: return_value
+    return_value: "Welcome to API Gateway"
     auth: false
   products:
   - upstream: /products
     method: GET
-    type: request
+    use: downstream
     downstream: products-service/products
   - upstream: /products/{productId}
     method: GET
-    type: request
+    use: downstream
     downstream: products-service/products/{productId}
   - upstream: /products
     method: POST
-    type: dispatcher
+    use: dispatcher
     exchange: "products.create_product"
     routing_key: "create_product"
     payload: create_product.json
     scheme: create_product.scheme.json
     claims:
-      http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name: admin
+      role: admin
   orders:
   - upstream: /orders
     method: GET
-    type: request
+    use: downstream
     downstream: https://api.42.do/training/plans.json
   - upstream: /orders/{orderId}
     method: GET
-    type: request
+    use: downstream
     downstream: orders-service/orders/{orderId}
   - upstream: /orders
     method: POST
-    type: dispatcher
+    use: dispatcher
     exchange: "orders.create_order"
     routing_key: "create_order"
     set:
@@ -59,7 +72,7 @@ routes:
     generate_resource_id: true
     method: POST
     downstream_method: PUT
-    type: request
+    use: downstream
     downstream: orders-service/orders/{orderId}
     set:
     - customerId:{user_id}

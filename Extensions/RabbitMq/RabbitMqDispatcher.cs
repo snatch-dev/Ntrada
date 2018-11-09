@@ -65,7 +65,6 @@ namespace NGate.Extensions.RabbitMq
                 CreatedAt = DateTime.UtcNow,
                 TraceId = executionData.Request.HttpContext.TraceIdentifier
             };
-
             await _busClient.PublishAsync(message, ctx => ctx.UseMessageContext(context)
                 .UsePublishConfiguration(c =>
                     c.OnDeclaredExchange(e => e.WithName(route.Exchange)).WithRoutingKey(route.RoutingKey)));

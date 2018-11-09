@@ -2,7 +2,9 @@
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +29,8 @@ namespace NGate
                 .WithNamingConvention(new UnderscoredNamingConvention())
                 .Build();
             var configuration = deserializer.Deserialize<Configuration>(text);
-            var useJwt = configuration.Config.Authentication?.Type?.ToLowerInvariant() == "jwt";
+            var authenticationConfig = configuration.Config.Authentication;
+            var useJwt = authenticationConfig?.Type?.ToLowerInvariant() == "jwt";
 
             return WebHost.CreateDefaultBuilder(args)
                 .ConfigureServices(s =>
@@ -36,35 +39,39 @@ namespace NGate
                         .AddJsonFormatters()
                         .AddJsonOptions(o => o.SerializerSettings.Formatting = Formatting.Indented);
                     s.AddHttpClient();
-                    if (!useJwt)
+                    if (authenticationConfig == null || !useJwt)
                     {
                         return;
                     }
 
+                    s.AddAuthorization();
                     s.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(cfg =>
                         {
                             cfg.TokenValidationParameters = new TokenValidationParameters
                             {
                                 IssuerSigningKey = new SymmetricSecurityKey(Encoding
-                                    .UTF8.GetBytes(configuration.Config.Authentication.Key)),
-                                ValidIssuer = configuration.Config.Authentication.Issuer,
-                                ValidAudience = null,
-                                ValidateAudience = false,
-                                ValidateLifetime = true
+                                    .UTF8.GetBytes(authenticationConfig.Key)),
+                                ValidIssuer = authenticationConfig.Issuer,
+                                ValidIssuers = authenticationConfig.Issuers,
+                                ValidAudience = authenticationConfig.Audience,
+                                ValidAudiences = authenticationConfig.Audiences,
+                                ValidateIssuer = authenticationConfig.ValidateIssuer,
+                                ValidateAudience = authenticationConfig.ValidateAudience,
+                                ValidateLifetime = authenticationConfig.ValidateLifetime
                             };
                         });
                 })
-                .Configure(c =>
+                .Configure(app =>
                 {
                     if (useJwt)
                     {
-                        c.UseAuthentication();
+                        app.UseAuthentication();
                     }
 
-                    var routeProvider = new RouteProvider(c.ApplicationServices,
+                    var routeProvider = new RouteProvider(app.ApplicationServices,
                         new RequestProcessor(configuration, new ValueProvider()), configuration);
-                    c.UseRouter(routeProvider.Build());
+                    app.UseRouter(routeProvider.Build());
                 });
         }
     }
