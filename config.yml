@@ -5,19 +5,24 @@ config:
   authentication:
     type: jwt
     global: true
-    issuer: dshop-identity-service
-    issuers:
-    validate_issuer: true
-    audience:
-    audiences:
-    validate_audience: false
-    validate_lifetime: false
-    key: JLBMU2VbJZmt42sUwByUpJJF6Y5mG2gPNU9sQFUpJFcGFJdyKxskR3bxh527kax2UcXHvB
+    jwt:
+      key: JLBMU2VbJZmt42sUwByUpJJF6Y5mG2gPNU9sQFUpJFcGFJdyKxskR3bxh527kax2UcXHvB
+      issuer: dshop-identity-service
+      issuers:
+      validate_issuer: true
+      audience:
+      audiences:
+      validate_audience: false
+      validate_lifetime: false
     claims:
       map:
         role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
-      required:
-        role: admin
+      groups:
+        admin:
+          role: admin
+        product_manager:
+          role: merchant
+          access: create_product
         
 extensions:
   dispatcher:
@@ -48,6 +53,9 @@ routes:
     scheme: create_product.scheme.json
     claims:
       role: admin
+    claims_groups:
+      - product_manager
+    
   orders:
   - upstream: /orders
     method: GET
@@ -68,7 +76,7 @@ routes:
       - test:nothing
     payload: create_order.json
     scheme: create_order.scheme.json
-  - upstream: /orders/sync
+  - upstream: /orders/sync/{orderId}
     generate_resource_id: true
     method: POST
     downstream_method: PUT

@@ -17,31 +17,38 @@ namespace NGate.Framework
 {
     public class RouteProvider
     {
-        private readonly IDictionary<string, Action<IRouteBuilder, string, Route>> _methods;
+        private readonly IDictionary<string, Action<IRouteBuilder, string, RouteConfig>> _methods;
         private readonly IDictionary<string, IExtension> _extensions;
         private readonly IServiceProvider _serviceProvider;
         private readonly IRequestProcessor _requestProcessor;
+        private readonly IRouteConfigurator _routeConfigurator;
         private readonly Configuration _configuration;
 
         public RouteProvider(IServiceProvider serviceProvider, IRequestProcessor requestProcessor,
-            Configuration configuration)
+            IRouteConfigurator routeConfigurator, Configuration configuration)
         {
             _serviceProvider = serviceProvider;
             _requestProcessor = requestProcessor;
+            _routeConfigurator = routeConfigurator;
             _configuration = configuration;
-            var processors = new Dictionary<string, Func<Route, Func<HttpRequest, HttpResponse, RouteData, Task>>>
+            var processors = new Dictionary<string, Func<RouteConfig, Func<HttpRequest, HttpResponse, RouteData, Task>>>
             {
                 ["return_value"] = UseReturnValueAsync,
                 ["downstream"] = UseDownstreamAsync,
                 ["dispatcher"] = UseDispatcherAsync
             };
-            _methods = new Dictionary<string, Action<IRouteBuilder, string, Route>>
+            _methods = new Dictionary<string, Action<IRouteBuilder, string, RouteConfig>>
             {
-                ["get"] = (builder, path, route) => builder.MapGet(path, processors[route.Use](route)),
-                ["post"] = (builder, path, route) => builder.MapPost(path, processors[route.Use](route)),
-                ["put"] = (builder, path, route) => builder.MapPut(path, processors[route.Use](route)),
-                ["delete"] = (builder, path, route) => builder.MapDelete(path, processors[route.Use](route)),
-                ["patch"] = (builder, path, route) => builder.MapVerb("patch", path, processors[route.Use](route))
+                ["get"] = (builder, path, routeConfig) =>
+                    builder.MapGet(path, processors[routeConfig.Route.Use](routeConfig)),
+                ["post"] = (builder, path, routeConfig) =>
+                    builder.MapPost(path, processors[routeConfig.Route.Use](routeConfig)),
+                ["put"] = (builder, path, routeConfig) =>
+                    builder.MapPut(path, processors[routeConfig.Route.Use](routeConfig)),
+                ["delete"] = (builder, path, routeConfig) =>
+                    builder.MapDelete(path, processors[routeConfig.Route.Use](routeConfig)),
+                ["patch"] = (builder, path, routeConfig) =>
+                    builder.MapVerb("patch", path, processors[routeConfig.Route.Use](routeConfig))
             };
             _extensions = new Dictionary<string, IExtension>
             {
@@ -74,56 +81,57 @@ namespace NGate.Framework
 
         private void BuildRoutes(IRouteBuilder routeBuilder, Route route)
         {
-            var method = (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
-            var path = (string.IsNullOrWhiteSpace(route.Upstream) ? "/" : route.Upstream);
-            _methods[method](routeBuilder, path, route);
+            route.Method = (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();;
+            route.Upstream = (string.IsNullOrWhiteSpace(route.Upstream) ? "/" : route.Upstream);
+            var routeConfig = _routeConfigurator.Configure(route);
+            _methods[route.Method](routeBuilder, route.Upstream, routeConfig);
         }
 
-        private Func<HttpRequest, HttpResponse, RouteData, Task> UseDispatcherAsync(Route route)
+        private Func<HttpRequest, HttpResponse, RouteData, Task> UseDispatcherAsync(RouteConfig routeConfig)
             => async (request, response, data) =>
             {
-                if (!await CanExecuteAsync(request, response, data, route))
+                if (!await CanExecuteAsync(request, response, data, routeConfig))
                 {
                     return;
                 }
 
                 var dispatcher = _extensions["dispatcher"];
-                var executionData = await _requestProcessor.ProcessAsync(route, request, response, data);
+                var executionData = await _requestProcessor.ProcessAsync(routeConfig, request, response, data);
                 await dispatcher.ExecuteAsync(executionData);
             };
 
-        private Func<HttpRequest, HttpResponse, RouteData, Task> UseReturnValueAsync(Route route)
+        private Func<HttpRequest, HttpResponse, RouteData, Task> UseReturnValueAsync(RouteConfig routeConfig)
             => async (request, response, data) =>
             {
-                if (!await CanExecuteAsync(request, response, data, route))
+                if (!await CanExecuteAsync(request, response, data, routeConfig))
                 {
                     return;
                 }
 
-                await response.WriteAsync(route.ReturnValue);
+                await response.WriteAsync(routeConfig.Route.ReturnValue);
             };
 
 
-        private Func<HttpRequest, HttpResponse, RouteData, Task> UseDownstreamAsync(Route route)
+        private Func<HttpRequest, HttpResponse, RouteData, Task> UseDownstreamAsync(RouteConfig routeConfig)
             => async (request, response, data) =>
             {
-                if (!await CanExecuteAsync(request, response, data, route))
+                if (!await CanExecuteAsync(request, response, data, routeConfig))
                 {
                     return;
                 }
 
-                if (route.Downstream == null)
+                if (routeConfig.Route.Downstream == null)
                 {
                     return;
                 }
 
-                var executionData = await _requestProcessor.ProcessAsync(route, request, response, data);
-                if (string.IsNullOrWhiteSpace(executionData.Url))
+                var executionData = await _requestProcessor.ProcessAsync(routeConfig, request, response, data);
+                if (string.IsNullOrWhiteSpace(executionData.Downstream))
                 {
                     return;
                 }
 
-                var httpRequest = GetRequest(route, executionData);
+                var httpRequest = GetRequest(executionData);
                 if (httpRequest == null)
                 {
                     return;
@@ -135,23 +143,29 @@ namespace NGate.Framework
             };
 
         private async Task<bool> CanExecuteAsync(HttpRequest request, HttpResponse response,
-            RouteData data, Route route)
-            => await IsAuthorizedAsync(request, response, route);
+            RouteData data, RouteConfig routeConfig)
+            => await IsAuthorizedAsync(request, response, routeConfig);
 
-        private async Task<bool> IsAuthorizedAsync(HttpRequest request, HttpResponse response, Route route)
+        private async Task<bool> IsAuthorizedAsync(HttpRequest request, HttpResponse response, RouteConfig routeConfig)
         {
-            if (_configuration.Config.Authentication?.Global != true || (route.Auth.HasValue && route.Auth == false))
-            {
-                return true;
-            }
-            
-            var result = await request.HttpContext.AuthenticateAsync();
-            if (route.Claims == null || !route.Claims.Any())
+            if (_configuration.Config.Authentication?.Global != true
+                || (routeConfig.Route.Auth.HasValue && routeConfig.Route.Auth == false))
             {
                 return true;
             }
 
-            var hasClaims = route.Claims.All(claim => request.HttpContext.User.Claims
+            var result = await request.HttpContext.AuthenticateAsync();
+            if (!result.Succeeded)
+            {
+                return false;
+            }
+
+            if (routeConfig.Route.Claims == null || !routeConfig.Route.Claims.Any())
+            {
+                return true;
+            }
+
+            var hasClaims = routeConfig.Route.Claims.All(claim => request.HttpContext.User.Claims
                 .Any(c => c.Type == claim.Key && c.Value == claim.Value));
             if (hasClaims)
             {
@@ -163,12 +177,14 @@ namespace NGate.Framework
             return false;
         }
 
-        private Func<Task<HttpResponseMessage>> GetRequest(Route route, ExecutionData executionData)
+        private Func<Task<HttpResponseMessage>> GetRequest(ExecutionData executionData)
         {
-            var url = executionData.Url;
+            var url = executionData.Downstream;
             var httpClient = _serviceProvider.GetService<IHttpClientFactory>().CreateClient();
             var payload = GetPayload(executionData.Payload, executionData.ContentType);
-            var method = (string.IsNullOrWhiteSpace(route.DownstreamMethod) ? route.Method : route.DownstreamMethod)
+            var method = (string.IsNullOrWhiteSpace(executionData.Route.DownstreamMethod)
+                    ? executionData.Route.Method
+                    : executionData.Route.DownstreamMethod)
                 .ToLowerInvariant();
             switch (method)
             {
@@ -177,7 +193,7 @@ namespace NGate.Framework
                 case "post":
                     return () => httpClient.PostAsync(url, payload);
                 case "put":
-                    return () => httpClient.PutAsJsonAsync(url, payload);
+                    return () => httpClient.PutAsync(url, payload);
                 case "delete":
                     return () => httpClient.DeleteAsync(url);
                 case "patch":

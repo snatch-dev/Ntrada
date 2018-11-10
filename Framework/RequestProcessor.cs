@@ -24,20 +24,20 @@ namespace NGate.Framework
             _messages = LoadMessages(_configuration);
         }
 
-        public async Task<ExecutionData> ProcessAsync(Route route, HttpRequest request, HttpResponse response,
-            RouteData data)
+        public async Task<ExecutionData> ProcessAsync(RouteConfig routeConfig,
+            HttpRequest request, HttpResponse response, RouteData data)
         {
             request.Headers.TryGetValue("content-type", out var contentType);
             var resourceId = Guid.NewGuid().ToString();
             var executionData = new ExecutionData
             {
                 ResourceId = resourceId,
-                Route = route,
+                Route = routeConfig.Route,
                 Request = request,
                 Response = response,
                 Data = data,
-                Url = GetUrl(route, request, data),
-                Payload = await GetPayloadAsync(resourceId, route, request, data),
+                Downstream = GetDownstream(routeConfig, request, data),
+                Payload = await GetPayloadAsync(resourceId, routeConfig.Route, request, data),
                 UserId = _valueProvider.Get("{user_id}", request, data),
                 ContentType = contentType
             };
@@ -48,6 +48,11 @@ namespace NGate.Framework
         private async Task<ExpandoObject> GetPayloadAsync(string resourceId, Route route, HttpRequest request,
             RouteData data)
         {
+            if (route.Method == "get" || route.Method == "delete")
+            {
+                return null;
+            }
+
             using (var reader = new StreamReader(request.Body))
             {
                 var content = await reader.ReadToEndAsync();
@@ -141,31 +146,22 @@ namespace NGate.Framework
             return messages;
         }
 
-        private string GetUrl(Route route, HttpRequest request, RouteData data)
+        private string GetDownstream(RouteConfig routeConfig, HttpRequest request, RouteData data)
         {
-            if (string.IsNullOrWhiteSpace(route.Downstream))
+            if (string.IsNullOrWhiteSpace(routeConfig.Downstream))
             {
                 return null;
             }
 
-            var basePath = route.Downstream.Contains("/")
-                ? route.Downstream.Split('/')[0]
-                : route.Downstream;
-
-            var servicePath = _configuration.Services.TryGetValue(basePath, out var service)
-                ? route.Downstream.Replace(basePath, service.Url)
-                : route.Downstream;
-
-            var upstream = servicePath.StartsWith("http") ? servicePath : $"http://{servicePath}";
-
+            var downstream = routeConfig.Downstream;
             var stringBuilder = new StringBuilder();
-            stringBuilder.Append(upstream);
+            stringBuilder.Append(downstream);
             foreach (var value in data.Values)
             {
-                stringBuilder.Replace($"{value.Key}", value.Value.ToString());
+                stringBuilder.Replace($"{{{value.Key}}}", value.Value.ToString());
             }
 
-            if (_configuration.Config.PassQueryString != false && route.PassQueryString != false)
+            if (_configuration.Config.PassQueryString != false && routeConfig.Route.PassQueryString != false)
             {
                 stringBuilder.Append(request.QueryString.ToString());
             }

@@ -22,6 +22,12 @@ namespace NGate.Framework
     {
         public string Type { get; set; }
         public bool Global { get; set; }
+        public Jwt Jwt { get; set; }
+        public Claims Claims { get; set; }
+    }
+
+    public class Jwt
+    {
         public string Key { get; set; }
         public string Issuer { get; set; }
         public bool ValidateIssuer { get; set; }
@@ -30,13 +36,12 @@ namespace NGate.Framework
         public IEnumerable<string> Audiences { get; set; }
         public bool ValidateAudience { get; set; }
         public bool ValidateLifetime { get; set; }
-        public Claims Claims { get; set; }
     }
 
     public class Claims
     {
         public IDictionary<string, string> Map { get; set; }
-        public IDictionary<string, string> Required { get; set; }
+        public IDictionary<string, IDictionary<string, string>> Groups { get; set; }
     }
 
     public class RoutesGroup

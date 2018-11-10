@@ -44,6 +44,7 @@ namespace NGate
                         return;
                     }
 
+                    var jwtConfig = authenticationConfig.Jwt;
                     s.AddAuthorization();
                     s.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         .AddJwtBearer(cfg =>
@@ -51,14 +52,14 @@ namespace NGate
                             cfg.TokenValidationParameters = new TokenValidationParameters
                             {
                                 IssuerSigningKey = new SymmetricSecurityKey(Encoding
-                                    .UTF8.GetBytes(authenticationConfig.Key)),
-                                ValidIssuer = authenticationConfig.Issuer,
-                                ValidIssuers = authenticationConfig.Issuers,
-                                ValidAudience = authenticationConfig.Audience,
-                                ValidAudiences = authenticationConfig.Audiences,
-                                ValidateIssuer = authenticationConfig.ValidateIssuer,
-                                ValidateAudience = authenticationConfig.ValidateAudience,
-                                ValidateLifetime = authenticationConfig.ValidateLifetime
+                                    .UTF8.GetBytes(jwtConfig.Key)),
+                                ValidIssuer = jwtConfig.Issuer,
+                                ValidIssuers = jwtConfig.Issuers,
+                                ValidAudience = jwtConfig.Audience,
+                                ValidAudiences = jwtConfig.Audiences,
+                                ValidateIssuer = jwtConfig.ValidateIssuer,
+                                ValidateAudience = jwtConfig.ValidateAudience,
+                                ValidateLifetime = jwtConfig.ValidateLifetime
                             };
                         });
                 })
@@ -70,7 +71,8 @@ namespace NGate
                     }
 
                     var routeProvider = new RouteProvider(app.ApplicationServices,
-                        new RequestProcessor(configuration, new ValueProvider()), configuration);
+                        new RequestProcessor(configuration, new ValueProvider()),
+                        new RouteConfigurator(configuration), configuration);
                     app.UseRouter(routeProvider.Build());
                 });
         }

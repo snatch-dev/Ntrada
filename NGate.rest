@@ -14,6 +14,20 @@ Content-Type: application/application/json
     "test": "test field to be removed"
 }
 
+
+###
+GET {{url}}/orders
+authorization: Bearer {{accessToken}}
+content-type: application/json
+
+{
+}
+
+###
+GET {{url}}/products/5
+authorization: Bearer {{accessToken}}
+
+
 ###
 POST {{url}}/orders
 authorization: Bearer {{accessToken}}
@@ -23,7 +37,7 @@ content-type: application/json
 }
 
 ###
-POST {{url}}/orders/sync
+POST {{url}}/orders/sync/1
 authorization: Bearer {{accessToken}}
 content-type: application/json
 
