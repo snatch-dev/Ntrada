@@ -14,7 +14,7 @@ routes:
   use: dispatcher
   exchange: orders.create_order
   routing_key: create_order
-  set:
+  bind:
   - customerId:{user_id}
   transform:
   - test:nothing
@@ -26,7 +26,7 @@ routes:
   downstream_method: PUT
   use: downstream
   downstream: orders-service/orders/{orderId}
-  set:
+  bind:
   - customerId:{user_id}
   transform:
   - customerId:user

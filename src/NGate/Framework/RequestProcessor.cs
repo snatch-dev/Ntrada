@@ -63,7 +63,7 @@ namespace NGate.Framework
                     : GetObject(content);
 
                 var commandValues = (IDictionary<string, object>) command;
-                foreach (var setter in route.Set ?? Enumerable.Empty<string>())
+                foreach (var setter in route.Bind ?? Enumerable.Empty<string>())
                 {
                     var keyAndValue = setter.Split(':');
                     var key = keyAndValue[0];

@@ -73,7 +73,7 @@ namespace NGate.Framework
         public bool? Auth { get; set; }
         public IDictionary<string, string> Claims { get; set; }
         public IEnumerable<string> Policies { get; set; }
-        public IEnumerable<string> Set { get; set; }
+        public IEnumerable<string> Bind { get; set; }
         public IEnumerable<string> Transform { get; set; }
     }
 
