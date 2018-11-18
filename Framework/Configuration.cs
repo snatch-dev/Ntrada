@@ -12,10 +12,18 @@ namespace NGate.Framework
 
     public class Config
     {
+        public bool UseErrorHandler { get; set; }
         public bool GenerateResourceId { get; set; }
         public bool? PassQueryString { get; set; }
         public Authentication Authentication { get; set; }
         public string PayloadsPath { get; set; }
+        public Cors Cors { get; set; }
+    }
+
+    public class Cors
+    {
+        public bool Enabled { get; set; }
+        public IEnumerable<string> Headers { get; set; }
     }
 
     public class Authentication
@@ -23,7 +31,8 @@ namespace NGate.Framework
         public string Type { get; set; }
         public bool Global { get; set; }
         public Jwt Jwt { get; set; }
-        public Claims Claims { get; set; }
+        public IDictionary<string, string> Claims { get; set; }
+        public IDictionary<string, IDictionary<string, string>> Policies { get; set; }
     }
 
     public class Jwt
@@ -36,18 +45,6 @@ namespace NGate.Framework
         public IEnumerable<string> Audiences { get; set; }
         public bool ValidateAudience { get; set; }
         public bool ValidateLifetime { get; set; }
-    }
-
-    public class Claims
-    {
-        public IDictionary<string, string> Map { get; set; }
-        public IDictionary<string, IDictionary<string, string>> Groups { get; set; }
-    }
-
-    public class RoutesGroup
-    {
-        public string Name { get; set; }
-        public List<Route> Routes { get; set; }
     }
 
     public class Route
@@ -66,6 +63,7 @@ namespace NGate.Framework
         public string RoutingKey { get; set; }
         public bool? Auth { get; set; }
         public IDictionary<string, string> Claims { get; set; }
+        public IEnumerable<string> Policies { get; set; }
         public IEnumerable<string> Set { get; set; }
         public IEnumerable<string> Transform { get; set; }
     }

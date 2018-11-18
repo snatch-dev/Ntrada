@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
@@ -7,10 +8,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using NGate.Framework;
+using NGate.Middleware;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -31,6 +34,9 @@ namespace NGate
             var configuration = deserializer.Deserialize<Configuration>(text);
             var authenticationConfig = configuration.Config.Authentication;
             var useJwt = authenticationConfig?.Type?.ToLowerInvariant() == "jwt";
+            var cors = configuration.Config?.Cors;
+            var useCors = cors?.Enabled == true;
+            var useErrorHandler = configuration.Config?.UseErrorHandler == true;
 
             return WebHost.CreateDefaultBuilder(args)
                 .ConfigureServices(s =>
@@ -42,6 +48,25 @@ namespace NGate
                     if (authenticationConfig == null || !useJwt)
                     {
                         return;
+                    }
+
+                    if (useErrorHandler)
+                    {
+                        s.AddTransient<ErrorHandlerMiddleware>();
+                    }
+
+                    if (useCors)
+                    {
+                        s.AddCors(options =>
+                        {
+                            var headers = cors?.Headers ?? Enumerable.Empty<string>();
+                            options.AddPolicy("CorsPolicy", builder => 
+                                builder.AllowAnyOrigin()
+                                    .AllowAnyMethod()
+                                    .AllowAnyHeader()
+                                    .AllowCredentials()
+                                    .WithExposedHeaders(headers.ToArray()));
+                        });
                     }
 
                     var jwtConfig = authenticationConfig.Jwt;
@@ -65,6 +90,14 @@ namespace NGate
                 })
                 .Configure(app =>
                 {
+                    if (useErrorHandler)
+                    {
+                        app.UseMiddleware<ErrorHandlerMiddleware>();
+                    }
+                    if (useCors)
+                    {
+                        app.UseCors("CorsPolicy");
+                    }
                     if (useJwt)
                     {
                         app.UseAuthentication();

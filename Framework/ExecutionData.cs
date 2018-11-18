@@ -6,6 +6,7 @@ namespace NGate.Framework
 {
     public class ExecutionData
     {
+        public string RequestId { get; set; }
         public Route Route { get; set; }
         public HttpRequest Request { get; set; }
         public HttpResponse Response { get; set; }

@@ -98,6 +98,9 @@ namespace NGate.Framework
                 var dispatcher = _extensions["dispatcher"];
                 var executionData = await _requestProcessor.ProcessAsync(routeConfig, request, response, data);
                 await dispatcher.ExecuteAsync(executionData);
+                response.Headers.Add("X-Operation", executionData.RequestId);
+                response.Headers.Add("X-Resource", executionData.ResourceId);
+                response.StatusCode = 202;
             };
 
         private Func<HttpRequest, HttpResponse, RouteData, Task> UseReturnValueAsync(RouteConfig routeConfig)
@@ -165,7 +168,7 @@ namespace NGate.Framework
                 return true;
             }
 
-            var hasClaims = routeConfig.Route.Claims.All(claim => request.HttpContext.User.Claims
+            var hasClaims = routeConfig.Claims.All(claim => request.HttpContext.User.Claims
                 .Any(c => c.Type == claim.Key && c.Value == claim.Value));
             if (hasClaims)
             {

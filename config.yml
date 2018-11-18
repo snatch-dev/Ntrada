@@ -2,6 +2,13 @@ config:
   generate_resource_id: true
   pass_query_string: true
   payloads_path: payloads/
+  use_error_handler: true
+  cors:
+    enabled: true
+    headers:
+      - X-Operation
+      - X-Resource
+      - X-Total-Count
   authentication:
     type: jwt
     global: true
@@ -15,14 +22,13 @@ config:
       validate_audience: false
       validate_lifetime: false
     claims:
-      map:
         role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
-      groups:
-        admin:
-          role: admin
-        product_manager:
-          role: merchant
-          access: create_product
+    policies:
+      admin:
+        role: admin
+      product_manager:
+        role: merchant
+        access: create_product
         
 extensions:
   dispatcher:
@@ -53,7 +59,7 @@ routes:
     scheme: create_product.scheme.json
     claims:
       role: admin
-    claims_groups:
+    policies:
       - product_manager
     
   orders:

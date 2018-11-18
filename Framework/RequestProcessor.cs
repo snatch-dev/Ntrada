@@ -48,7 +48,7 @@ namespace NGate.Framework
         private async Task<ExpandoObject> GetPayloadAsync(string resourceId, Route route, HttpRequest request,
             RouteData data)
         {
-            if (route.Method == "get" || route.Method == "delete")
+            if (route.Method == "get" || route.Method == "delete" || route.Method == "options")
             {
                 return null;
             }

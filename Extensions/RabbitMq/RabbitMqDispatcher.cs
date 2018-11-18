@@ -57,7 +57,7 @@ namespace NGate.Extensions.RabbitMq
             var route = executionData.Route;
             var context = new CorrelationContext
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = executionData.RequestId,
                 Name = executionData.Route.RoutingKey,
                 ResourceId = executionData.ResourceId,
                 UserId = executionData.UserId,
