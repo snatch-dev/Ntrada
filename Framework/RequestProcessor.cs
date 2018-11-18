@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore.Internal;
 using Newtonsoft.Json;
 
 namespace NGate.Framework
@@ -61,7 +62,6 @@ namespace NGate.Framework
                 var command = _messages.ContainsKey(route.Upstream)
                     ? GetObjectFromPayload(route, content)
                     : GetObject(content);
-
 
                 var commandValues = (IDictionary<string, object>) command;
                 foreach (var setter in route.Set ?? Enumerable.Empty<string>())
@@ -122,27 +122,55 @@ namespace NGate.Framework
         private Dictionary<string, ExpandoObject> LoadMessages(Configuration configuration)
         {
             var messages = new Dictionary<string, ExpandoObject>();
-            var payloadsPath = configuration.Config.PayloadsPath;
-            var fullPayloadsPath = string.IsNullOrWhiteSpace(payloadsPath)
+            var modulesPath = configuration.Config.ModulesPath;
+            modulesPath = string.IsNullOrWhiteSpace(modulesPath)
                 ? string.Empty
-                : (payloadsPath.EndsWith("/") ? payloadsPath : $"{payloadsPath}/");
-            foreach (var route in configuration.Routes.SelectMany(r => r.Value))
+                : (modulesPath.EndsWith("/") ? modulesPath : $"{modulesPath}/");
+
+            foreach (var module in configuration.Modules)
             {
-                if (string.IsNullOrWhiteSpace(route.Payload))
+                foreach (var route in module.Routes)
                 {
-                    continue;
-                }
+                    if (string.IsNullOrWhiteSpace(route.Payload))
+                    {
+                        continue;
+                    }
 
-                var filePath = $"{fullPayloadsPath}{route.Payload}";
-                if (!File.Exists(filePath))
-                {
-                    continue;
-                }
+                    var fullPath = $"{modulesPath}{module.Name}/payloads/{route.Payload}";
+                    var fullJsonPath = fullPath.EndsWith(".json") ? fullPath : $"{fullPath}.json";
+                    if (!File.Exists(fullJsonPath))
+                    {
+                        continue;
+                    }
 
-                var json = File.ReadAllText(filePath);
-                dynamic expandoObject = new ExpandoObject();
-                JsonConvert.PopulateObject(json, expandoObject);
-                messages.Add(route.Upstream, expandoObject);
+                    var json = File.ReadAllText(fullJsonPath);
+                    dynamic expandoObject = new ExpandoObject();
+                    JsonConvert.PopulateObject(json, expandoObject);
+
+                    var upstream = string.IsNullOrWhiteSpace(route.Upstream) ? string.Empty : route.Upstream;
+                    if (!string.IsNullOrWhiteSpace(module.Path))
+                    {
+                        var modulePath = module.Path.EndsWith("/") ? module.Path : $"{module.Path}/";
+                        if (upstream.StartsWith("/"))
+                        {
+                            upstream = upstream.Substring(1, upstream.Length - 1);
+                        }
+
+                        if (upstream.EndsWith("/"))
+                        {
+                            upstream = upstream.Substring(0, upstream.Length - 1);
+                        }
+
+                        upstream = $"{modulePath}{upstream}";
+                    }
+
+                    if (string.IsNullOrWhiteSpace(upstream))
+                    {
+                        upstream = "/";
+                    }
+
+                    messages.Add(upstream, expandoObject);
+                }
             }
 
             return messages;

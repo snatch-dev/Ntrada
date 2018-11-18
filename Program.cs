@@ -1,14 +1,12 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -37,6 +35,33 @@ namespace NGate
             var cors = configuration.Config?.Cors;
             var useCors = cors?.Enabled == true;
             var useErrorHandler = configuration.Config?.UseErrorHandler == true;
+            var moduleNames = configuration.Config.Modules;
+            var modules = new HashSet<Module>();
+            if (moduleNames != null)
+            {
+                var modulesPath = string.IsNullOrWhiteSpace(configuration.Config.ModulesPath)
+                    ? "Modules"
+                    : configuration.Config.ModulesPath;
+                if (!modulesPath.EndsWith("/"))
+                {
+                    modulesPath = $"{modulesPath}/";
+                }
+                foreach (var moduleName in moduleNames)
+                {
+                    var modulePath = $"{modulesPath}{moduleName}/module.yml";
+                    if (!File.Exists(modulePath))
+                    {
+                        continue;
+                    }
+                    var module = deserializer.Deserialize<Module>(File.ReadAllText(modulePath));
+                    modules.Add(module);
+                }
+
+                var allModules = new List<Module>();
+                allModules.AddRange(configuration.Modules);
+                allModules.AddRange(modules);
+                configuration.Modules = allModules;
+            }
 
             return WebHost.CreateDefaultBuilder(args)
                 .ConfigureServices(s =>

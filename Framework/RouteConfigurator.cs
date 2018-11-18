@@ -12,15 +12,15 @@ namespace NGate.Framework
             _configuration = configuration;
         }
 
-        public RouteConfig Configure(Route route)
+        public RouteConfig Configure(Module module, Route route)
             => new RouteConfig
             {
                 Route = route,
-                Claims = GetClaims(route),
-                Downstream = GetDownstream(route)
+                Claims = GetClaims(module, route),
+                Downstream = GetDownstream(module, route)
             };
 
-        private IDictionary<string, string> GetClaims(Route route)
+        private IDictionary<string, string> GetClaims(Module module, Route route)
         {
             if (route.Claims == null || !route.Claims.Any())
             {
@@ -48,7 +48,7 @@ namespace NGate.Framework
             return mappedClaims;
         }
 
-        private string GetDownstream(Route route)
+        private string GetDownstream(Module module, Route route)
         {
             if (string.IsNullOrWhiteSpace(route.Downstream))
             {
@@ -59,7 +59,7 @@ namespace NGate.Framework
                 ? route.Downstream.Split('/')[0]
                 : route.Downstream;
 
-            var servicePath = _configuration.Services.TryGetValue(basePath, out var service)
+            var servicePath = module.Services.TryGetValue(basePath, out var service)
                 ? route.Downstream.Replace(basePath, service.Url)
                 : route.Downstream;
 

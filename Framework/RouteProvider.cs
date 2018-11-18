@@ -64,26 +64,48 @@ namespace NGate.Framework
                     await extension.Value.InitAsync(_configuration);
                 }
 
-                foreach (var group in _configuration.Routes)
+                foreach (var module in _configuration.Modules)
                 {
-                    BuildRoutes(routeBuilder, group.Key, group.Value);
+                    BuildRoutes(routeBuilder, module);
                 }
             };
 
 
-        private void BuildRoutes(IRouteBuilder routeBuilder, string group, IEnumerable<Route> routes)
+        private void BuildRoutes(IRouteBuilder routeBuilder, Module module)
         {
-            foreach (var route in routes)
+            foreach (var route in module.Routes)
             {
-                BuildRoutes(routeBuilder, route);
+                BuildRoutes(routeBuilder, module, route);
             }
         }
 
-        private void BuildRoutes(IRouteBuilder routeBuilder, Route route)
+        private void BuildRoutes(IRouteBuilder routeBuilder, Module module, Route route)
         {
-            route.Method = (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();;
-            route.Upstream = (string.IsNullOrWhiteSpace(route.Upstream) ? "/" : route.Upstream);
-            var routeConfig = _routeConfigurator.Configure(route);
+            route.Method = (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
+            var upstream = string.IsNullOrWhiteSpace(route.Upstream) ? string.Empty : route.Upstream;
+            if (!string.IsNullOrWhiteSpace(module.Path))
+            {
+                var modulePath = module.Path.EndsWith("/") ? module.Path : $"{module.Path}/";
+                if (upstream.StartsWith("/"))
+                {
+                    upstream = upstream.Substring(1, upstream.Length - 1);
+                }
+
+                if (upstream.EndsWith("/"))
+                {
+                    upstream = upstream.Substring(0, upstream.Length - 1);
+                }
+
+                upstream = $"{modulePath}{upstream}";
+            }
+
+            if (string.IsNullOrWhiteSpace(upstream))
+            {
+                upstream = "/";
+            }
+
+            route.Upstream = upstream;
+            var routeConfig = _routeConfigurator.Configure(module, route);
             _methods[route.Method](routeBuilder, route.Upstream, routeConfig);
         }
 

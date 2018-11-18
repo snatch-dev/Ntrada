@@ -1,0 +1,25 @@
+name: products
+path: /products
+routes:
+- upstream: /
+  method: GET
+  use: downstream
+  downstream: products-service/products
+- upstream: /{productId}
+  method: GET
+  use: downstream
+  downstream: products-service/products/{productId}
+- upstream: /
+  method: POST
+  use: dispatcher
+  exchange: products.create_product
+  routing_key: create_product
+  payload: create_product
+  scheme: create_product.scheme
+  claims:
+    role: admin
+  policies:
+  - product_manager
+services:
+  products-service:
+    url: localhost:9999/products-service

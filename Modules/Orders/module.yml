@@ -1,0 +1,36 @@
+name: orders
+path: /orders
+routes:
+- upstream: /
+  method: GET
+  use: downstream
+  downstream: https://api.42.do/training/plans
+- upstream: /{orderId}
+  method: GET
+  use: downstream
+  downstream: orders-service/orders/{orderId}
+- upstream: /
+  method: POST
+  use: dispatcher
+  exchange: orders.create_order
+  routing_key: create_order
+  set:
+  - customerId:{user_id}
+  transform:
+  - test:nothing
+  payload: create_order
+  scheme: create_order.scheme
+- upstream: /sync/{orderId}
+  generate_resource_id: true
+  method: POST
+  downstream_method: PUT
+  use: downstream
+  downstream: orders-service/orders/{orderId}
+  set:
+  - customerId:{user_id}
+  transform:
+  - customerId:user
+  payload: create_order
+services:
+  orders-service:
+    url: localhost:9999/orders-service

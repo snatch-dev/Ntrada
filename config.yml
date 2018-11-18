@@ -1,8 +1,11 @@
 config:
   generate_resource_id: true
   pass_query_string: true
-  payloads_path: payloads/
   use_error_handler: true
+  modules_path: modules
+  modules:
+    - orders
+    - products
   cors:
     enabled: true
     headers:
@@ -34,68 +37,11 @@ extensions:
   dispatcher:
     use: rabbitmq_dispatcher
 
-routes:
-  home:
-  - upstream: /
-    method: GET
-    use: return_value
-    return_value: "Welcome to API Gateway"
-    auth: false
-  products:
-  - upstream: /products
-    method: GET
-    use: downstream
-    downstream: products-service/products
-  - upstream: /products/{productId}
-    method: GET
-    use: downstream
-    downstream: products-service/products/{productId}
-  - upstream: /products
-    method: POST
-    use: dispatcher
-    exchange: "products.create_product"
-    routing_key: "create_product"
-    payload: create_product.json
-    scheme: create_product.scheme.json
-    claims:
-      role: admin
-    policies:
-      - product_manager
-    
-  orders:
-  - upstream: /orders
-    method: GET
-    use: downstream
-    downstream: https://api.42.do/training/plans.json
-  - upstream: /orders/{orderId}
-    method: GET
-    use: downstream
-    downstream: orders-service/orders/{orderId}
-  - upstream: /orders
-    method: POST
-    use: dispatcher
-    exchange: "orders.create_order"
-    routing_key: "create_order"
-    set:
-      - customerId:{user_id}
-    transform:
-      - test:nothing
-    payload: create_order.json
-    scheme: create_order.scheme.json
-  - upstream: /orders/sync/{orderId}
-    generate_resource_id: true
-    method: POST
-    downstream_method: PUT
-    use: downstream
-    downstream: orders-service/orders/{orderId}
-    set:
-    - customerId:{user_id}
-    transform:
-    - customerId:user
-    payload: "create_order.json"
-
-services: 
-  products-service:
-    url: localhost:9999/products-service
-  orders-service:
-    url: localhost:9999/orders-service
+modules:
+  - name: home
+    routes:
+    - upstream: /
+      method: GET
+      use: return_value
+      return_value: Welcome to API Gateway
+      auth: false

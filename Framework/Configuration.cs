@@ -5,8 +5,15 @@ namespace NGate.Framework
     public class Configuration
     {
         public Config Config { get; set; }
-        public IDictionary<string, IEnumerable<Route>> Routes { get; set; }
+        public IEnumerable<Module> Modules { get; set; }
         public IDictionary<string, Extension> Extensions { get; set; }
+    }
+
+    public class Module
+    {
+        public string Name { get; set; }
+        public string Path { get; set; }
+        public IEnumerable<Route> Routes { get; set; }
         public IDictionary<string, Service> Services { get; set; }
     }
 
@@ -16,7 +23,8 @@ namespace NGate.Framework
         public bool GenerateResourceId { get; set; }
         public bool? PassQueryString { get; set; }
         public Authentication Authentication { get; set; }
-        public string PayloadsPath { get; set; }
+        public string ModulesPath { get; set; }
+        public IEnumerable<string> Modules { get; set; }
         public Cors Cors { get; set; }
     }
 
