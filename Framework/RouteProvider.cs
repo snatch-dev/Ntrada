@@ -182,6 +182,8 @@ namespace NGate.Framework
             var result = await request.HttpContext.AuthenticateAsync();
             if (!result.Succeeded)
             {
+                response.StatusCode = 401;
+                
                 return false;
             }
 

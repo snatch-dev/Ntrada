@@ -4,7 +4,7 @@ routes:
 - upstream: /
   method: GET
   use: downstream
-  downstream: https://api.42.do/training/plans
+  downstream: https://api.42.do/training/plans.json
 - upstream: /{orderId}
   method: GET
   use: downstream
