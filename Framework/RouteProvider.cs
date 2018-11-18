@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using NGate.Extensions.RabbitMq;
@@ -50,21 +53,63 @@ namespace NGate.Framework
                 ["patch"] = (builder, path, routeConfig) =>
                     builder.MapVerb("patch", path, processors[routeConfig.Route.Use](routeConfig))
             };
-            _extensions = new Dictionary<string, IExtension>
+            _extensions = LoadExtensions();
+        }
+
+        private IDictionary<string, IExtension> LoadExtensions()
+        {
+            var extensions = new Dictionary<string, IExtension>();
+
+            if (_configuration.Extensions == null)
             {
-                ["dispatcher"] = new RabbitMqDispatcher()
-            };
+                return extensions;
+            }
+
+            var extensionsTypes = Assembly.GetExecutingAssembly()
+                .GetTypes()
+                .Where(t => t.GetInterfaces().Contains(typeof(IExtension)))
+                .ToList();
+
+            if (!extensionsTypes.Any())
+            {
+                return extensions;
+            }
+
+            var loadedExtensions = new Dictionary<string, IExtension>();
+            foreach (var extensionType in extensionsTypes)
+            {
+                var extension = Activator.CreateInstance(extensionType, _configuration) as IExtension;
+                if (extension == null)
+                {
+                    continue;
+                }
+
+                loadedExtensions[extension.Name] = extension;
+            }
+
+            foreach (var extension in _configuration.Extensions)
+            {
+                var extensionName = extension.Value.Use;
+                if (!loadedExtensions.ContainsKey(extensionName))
+                {
+                    throw new ArgumentException($"Extension: '{extensionName}' was not found.", nameof(extensionName));
+                }
+
+                extensions[extension.Key] = loadedExtensions[extensionName];
+            }
+
+            return extensions;
         }
 
         public Action<IRouteBuilder> Build()
             => async routeBuilder =>
             {
-                foreach (var extension in _extensions)
+                foreach (var (_, extension) in _extensions)
                 {
-                    await extension.Value.InitAsync(_configuration);
+                    await extension.InitAsync();
                 }
 
-                foreach (var module in _configuration.Modules)
+                foreach (var module in _configuration.Modules.Where(m => m.Enabled != false))
                 {
                     BuildRoutes(routeBuilder, module);
                 }
@@ -117,7 +162,13 @@ namespace NGate.Framework
                     return;
                 }
 
-                var dispatcher = _extensions["dispatcher"];
+                const string name = "dispatcher";
+                if (!_extensions.ContainsKey(name))
+                {
+                    throw new InvalidOperationException($"Extension for: '{name}' was not found.");
+                }
+
+                var dispatcher = _extensions[name];
                 var executionData = await _requestProcessor.ProcessAsync(routeConfig, request, response, data);
                 await dispatcher.ExecuteAsync(executionData);
                 response.Headers.Add("X-Operation", executionData.RequestId);
@@ -183,7 +234,7 @@ namespace NGate.Framework
             if (!result.Succeeded)
             {
                 response.StatusCode = 401;
-                
+
                 return false;
             }
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -24,7 +25,29 @@ namespace NGate
 
         private static IWebHostBuilder CreateWebHostBuilder(string[] args)
         {
-            var text = File.ReadAllText("config.yml");
+            var configPath = args != null && args.Any() ? args[0] : string.Empty;
+            var configPathVariable = Environment.GetEnvironmentVariable("NGATE_CONFIG");
+            if (!string.IsNullOrWhiteSpace(configPathVariable))
+            {
+                configPath = configPathVariable;
+            }
+
+            if (string.IsNullOrWhiteSpace(configPath))
+            {
+                configPath = "ngate.yml";
+            }
+
+            if (!configPath.EndsWith(".yml"))
+            {
+                configPath = $"{configPath}.yml";
+            }
+
+            if (!File.Exists(configPath))
+            {
+                throw new ArgumentException($"NGate config was not found under: '{configPath}'", nameof(configPath));
+            }
+
+            var text = File.ReadAllText(configPath);
             var deserializer = new DeserializerBuilder()
                 .IgnoreUnmatchedProperties()
                 .WithNamingConvention(new UnderscoredNamingConvention())
@@ -35,25 +58,38 @@ namespace NGate
             var cors = configuration.Config?.Cors;
             var useCors = cors?.Enabled == true;
             var useErrorHandler = configuration.Config?.UseErrorHandler == true;
-            var moduleNames = configuration.Config.Modules;
-            var modules = new HashSet<Module>();
-            if (moduleNames != null)
+            if (configuration.Config.SettingsPath == null)
             {
-                var modulesPath = string.IsNullOrWhiteSpace(configuration.Config.ModulesPath)
-                    ? "Modules"
-                    : configuration.Config.ModulesPath;
-                if (!modulesPath.EndsWith("/"))
+                configuration.Config.SettingsPath = "Settings";
+            }
+
+            if (configuration.Config.SettingsPath.EndsWith("/"))
+            {
+                configuration.Config.SettingsPath = configuration.Config.SettingsPath
+                    .Substring(0, configuration.Config.SettingsPath.Length - 1);
+            }
+
+            var modules = new HashSet<Module>();
+            var modulesPath = string.IsNullOrWhiteSpace(configuration.Config.ModulesPath)
+                ? "Modules"
+                : configuration.Config.ModulesPath;
+            if (modulesPath.EndsWith("/"))
+            {
+                modulesPath = modulesPath.Substring(0, modulesPath.Length - 1);
+            }
+
+            if (Directory.Exists(modulesPath))
+            {
+                var modulesPaths = Directory.EnumerateDirectories(modulesPath).ToList();
+                foreach (var modulePath in modulesPaths)
                 {
-                    modulesPath = $"{modulesPath}/";
-                }
-                foreach (var moduleName in moduleNames)
-                {
-                    var modulePath = $"{modulesPath}{moduleName}/module.yml";
-                    if (!File.Exists(modulePath))
+                    var fullModulePath = $"{modulePath}/module.yml";
+                    if (!File.Exists(fullModulePath))
                     {
                         continue;
                     }
-                    var module = deserializer.Deserialize<Module>(File.ReadAllText(modulePath));
+
+                    var module = deserializer.Deserialize<Module>(File.ReadAllText(fullModulePath));
                     modules.Add(module);
                 }
 
@@ -70,6 +106,7 @@ namespace NGate
                         .AddJsonFormatters()
                         .AddJsonOptions(o => o.SerializerSettings.Formatting = Formatting.Indented);
                     s.AddHttpClient();
+                    s.AddLogging();
                     if (authenticationConfig == null || !useJwt)
                     {
                         return;
@@ -85,7 +122,7 @@ namespace NGate
                         s.AddCors(options =>
                         {
                             var headers = cors?.Headers ?? Enumerable.Empty<string>();
-                            options.AddPolicy("CorsPolicy", builder => 
+                            options.AddPolicy("CorsPolicy", builder =>
                                 builder.AllowAnyOrigin()
                                     .AllowAnyMethod()
                                     .AllowAnyHeader()
@@ -119,10 +156,12 @@ namespace NGate
                     {
                         app.UseMiddleware<ErrorHandlerMiddleware>();
                     }
+
                     if (useCors)
                     {
                         app.UseCors("CorsPolicy");
                     }
+
                     if (useJwt)
                     {
                         app.UseAuthentication();

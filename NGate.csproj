@@ -27,9 +27,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="config.yml">
+    <None Update="ngate.yml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Settings\rabbitmq.json">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

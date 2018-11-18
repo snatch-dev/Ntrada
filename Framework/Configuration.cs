@@ -13,6 +13,7 @@ namespace NGate.Framework
     {
         public string Name { get; set; }
         public string Path { get; set; }
+        public bool? Enabled { get; set; }
         public IEnumerable<Route> Routes { get; set; }
         public IDictionary<string, Service> Services { get; set; }
     }
@@ -24,7 +25,7 @@ namespace NGate.Framework
         public bool? PassQueryString { get; set; }
         public Authentication Authentication { get; set; }
         public string ModulesPath { get; set; }
-        public IEnumerable<string> Modules { get; set; }
+        public string SettingsPath { get; set; }
         public Cors Cors { get; set; }
     }
 
@@ -79,6 +80,7 @@ namespace NGate.Framework
     public class Extension
     {
         public string Use { get; set; }
+        public string Configuration { get; set; }
     }
 
     public class Service

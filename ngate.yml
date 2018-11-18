@@ -2,10 +2,8 @@ config:
   generate_resource_id: true
   pass_query_string: true
   use_error_handler: true
-  modules_path: modules
-  modules:
-    - orders
-    - products
+  modules_path: Modules
+  settings_path: Settings
   cors:
     enabled: true
     headers:
@@ -35,7 +33,8 @@ config:
         
 extensions:
   dispatcher:
-    use: rabbitmq_dispatcher
+    use: rabbitmq
+    configuration: rabbitmq.json
 
 modules:
   - name: home

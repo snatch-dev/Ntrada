@@ -7,7 +7,7 @@ namespace NGate.Framework
     public interface IExtension
     {
         string Name { get; }
-        Task InitAsync(Configuration configuration);
+        Task InitAsync();
         Task ExecuteAsync(ExecutionData executionData);
         Task CloseAsync();
     }

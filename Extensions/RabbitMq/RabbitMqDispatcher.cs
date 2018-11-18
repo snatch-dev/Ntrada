@@ -21,26 +21,40 @@ namespace NGate.Extensions.RabbitMq
 {
     public class RabbitMqDispatcher : IExtension
     {
+        private readonly Configuration _configuration;
         private IBusClient _busClient;
 
-        public string Name => "rabbitmq_dispatcher";
+        public string Name => "rabbitmq";
 
-        public async Task InitAsync(Configuration configuration)
+        public RabbitMqDispatcher(Configuration configuration)
         {
+            _configuration = configuration;
+        }
+
+        public async Task InitAsync()
+        {
+            var extension = _configuration.Extensions.Single(e => e.Value.Use == Name).Value;
+            var configurationPath = extension.Configuration;
+            if (!File.Exists(configurationPath))
+            {
+                configurationPath = $"{_configuration.Config.SettingsPath}/{configurationPath}";
+                if (!File.Exists(configurationPath))
+                {
+                    throw new Exception($"Configuration for an extension: '{Name}'," +
+                                        $"was not found under: '{configurationPath}'.");
+                }
+            }
+
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                .AddJsonFile(configurationPath);
 
             var options = new RabbitMqOptions();
-            builder.Build().GetSection("rabbitmq").Bind(options);
+            builder.Build().Bind(options);
 
             _busClient = RawRabbitFactory.CreateInstanceFactory(new RawRabbitOptions
             {
-                DependencyInjection = ioc =>
-                {
-                    ioc.AddSingleton(options);
-                    ioc.AddSingleton(configuration);
-                },
+                DependencyInjection = ioc => { ioc.AddSingleton(options); },
                 Plugins = p => p
                     .UseAttributeRouting()
                     .UseRetryLater()
