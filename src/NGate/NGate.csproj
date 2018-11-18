@@ -1,5 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+<PropertyGroup>
+    <Description>NGate API Gateway.</Description>
+    <VersionPrefix>0.0.1</VersionPrefix>
+    <Authors>Piotr Gankiewicz</Authors>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <AssemblyName>WardNGateen</AssemblyName>
+    <Title>NGate</Title>
+    <PackageId>NGate</PackageId>
+    <PackageTags>NGate</PackageTags>
+    <PackageProjectUrl>https://github.com/spetz/ngate</PackageProjectUrl>
+    <PackageLicense>https://github.com/spetz/ngate/blob/master/LICENSE</PackageLicense>
+  </PropertyGroup>
+
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.1</LangVersion>
