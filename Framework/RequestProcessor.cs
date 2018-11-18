@@ -28,9 +28,11 @@ namespace NGate.Framework
             HttpRequest request, HttpResponse response, RouteData data)
         {
             request.Headers.TryGetValue("content-type", out var contentType);
+            var requestId = Guid.NewGuid().ToString();
             var resourceId = Guid.NewGuid().ToString();
             var executionData = new ExecutionData
             {
+                RequestId = requestId,
                 ResourceId = resourceId,
                 Route = routeConfig.Route,
                 Request = request,
