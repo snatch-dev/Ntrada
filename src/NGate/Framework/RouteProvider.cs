@@ -1,20 +1,15 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using NGate.Extensions.RabbitMq;
 
 namespace NGate.Framework
 {
@@ -104,9 +99,9 @@ namespace NGate.Framework
         public Action<IRouteBuilder> Build()
             => async routeBuilder =>
             {
-                foreach (var (_, extension) in _extensions)
+                foreach (var extension in _extensions)
                 {
-                    await extension.InitAsync();
+                    await extension.Value.InitAsync();
                 }
 
                 foreach (var module in _configuration.Modules.Where(m => m.Enabled != false))
@@ -274,8 +269,6 @@ namespace NGate.Framework
                     return () => httpClient.PutAsync(url, payload);
                 case "delete":
                     return () => httpClient.DeleteAsync(url);
-                case "patch":
-                    return () => httpClient.PatchAsync(url, payload);
             }
 
             return null;
