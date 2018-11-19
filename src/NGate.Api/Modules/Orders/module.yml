@@ -4,7 +4,7 @@ routes:
 - upstream: /
   method: GET
   use: downstream
-  downstream: https://api.42.do/training/plans.json
+  downstream: orders-service/orders?customerId=@user_id
 - upstream: /{orderId}
   method: GET
   use: downstream
@@ -15,7 +15,7 @@ routes:
   exchange: orders.create_order
   routing_key: create_order
   bind:
-  - customerId:{user_id}
+  - customerId:@user_id
   transform:
   - test:nothing
   payload: create_order
@@ -27,10 +27,19 @@ routes:
   use: downstream
   downstream: orders-service/orders/{orderId}
   bind:
-  - customerId:{user_id}
+  - customerId:@user_id
   transform:
   - customerId:user
   payload: create_order
+- upstream: /{id}
+  method: DELETE
+  use: dispatcher
+  exchange: orders.cancel_order
+  routing_key: cancel_order
+  bind:
+  - id:{id}
+  - customerId:@user_id
+  payload: cancel_order
 services:
   orders-service:
     url: localhost:9999/orders-service

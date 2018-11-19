@@ -40,7 +40,7 @@ namespace NGate.Framework
                 Data = data,
                 Downstream = GetDownstream(routeConfig, request, data),
                 Payload = await GetPayloadAsync(resourceId, routeConfig.Route, request, data),
-                UserId = _valueProvider.Get("{user_id}", request, data),
+                UserId = _valueProvider.Get("@user_id", request, data),
                 ContentType = contentType
             };
 
@@ -50,46 +50,68 @@ namespace NGate.Framework
         private async Task<ExpandoObject> GetPayloadAsync(string resourceId, Route route, HttpRequest request,
             RouteData data)
         {
-            if (route.Method == "get" || route.Method == "delete" || route.Method == "options")
+            if (route.Use == "downstream" &&
+                (string.IsNullOrWhiteSpace(route.DownstreamMethod) || route.DownstreamMethod == "get"))
             {
                 return null;
             }
 
-            using (var reader = new StreamReader(request.Body))
+            var content = "{}";
+            if (request.Body != null)
             {
-                var content = await reader.ReadToEndAsync();
-                var command = _messages.ContainsKey(route.Upstream)
-                    ? GetObjectFromPayload(route, content)
-                    : GetObject(content);
-
-                var commandValues = (IDictionary<string, object>) command;
-                foreach (var setter in route.Bind ?? Enumerable.Empty<string>())
+                using (var reader = new StreamReader(request.Body))
                 {
-                    var keyAndValue = setter.Split(':');
-                    var key = keyAndValue[0];
-                    var value = keyAndValue[1];
-                    commandValues[key] = _valueProvider.Get(value, request, data);
+                    content = await reader.ReadToEndAsync();
                 }
-
-                foreach (var transformation in route.Transform ?? Enumerable.Empty<string>())
-                {
-                    var beforeAndAfter = transformation.Split(':');
-                    var before = beforeAndAfter[0];
-                    var after = beforeAndAfter[1];
-                    if (commandValues.TryGetValue(before, out var value))
-                    {
-                        commandValues.Remove(before);
-                        commandValues.Add(after, value);
-                    }
-                }
-
-                if (_configuration.Config.GenerateResourceId && (route.GenerateResourceId != false))
-                {
-                    commandValues.Add("id", resourceId);
-                }
-
-                return command as ExpandoObject;
             }
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                content = "{}";
+            }
+
+            var command = _messages.ContainsKey(route.Upstream)
+                ? GetObjectFromPayload(route, content)
+                : GetObject(content);
+
+            var commandValues = (IDictionary<string, object>) command;
+            if (_configuration.Config.ResourceId?.Generate == true && (route.GenerateResourceId != false))
+            {
+                var resourceIdProperty = _configuration.Config.ResourceId.Property;
+                if (string.IsNullOrWhiteSpace(resourceIdProperty))
+                {
+                    resourceIdProperty = "id";
+                }
+
+                commandValues.Add(resourceIdProperty, resourceId);
+            }
+
+            foreach (var setter in route.Bind ?? Enumerable.Empty<string>())
+            {
+                var keyAndValue = setter.Split(':');
+                var key = keyAndValue[0];
+                var value = keyAndValue[1];
+                commandValues[key] = _valueProvider.Get(value, request, data);
+                var routeValue = value.Length > 2 ? value.Substring(1, value.Length - 2) : string.Empty;
+                if (data.Values.TryGetValue(routeValue, out var dataValue))
+                {
+                    commandValues[key] = dataValue;
+                }
+            }
+
+            foreach (var transformation in route.Transform ?? Enumerable.Empty<string>())
+            {
+                var beforeAndAfter = transformation.Split(':');
+                var before = beforeAndAfter[0];
+                var after = beforeAndAfter[1];
+                if (commandValues.TryGetValue(before, out var value))
+                {
+                    commandValues.Remove(before);
+                    commandValues.Add(after, value);
+                }
+            }
+
+            return command as ExpandoObject;
         }
 
         private object GetObjectFromPayload(Route route, string content)
@@ -182,9 +204,18 @@ namespace NGate.Framework
                 return null;
             }
 
-            var downstream = routeConfig.Downstream;
             var stringBuilder = new StringBuilder();
+            var downstream = routeConfig.Downstream;
             stringBuilder.Append(downstream);
+            if (downstream.Contains("@"))
+            {
+                foreach (var token in _valueProvider.Tokens)
+                {
+                    var tokenName = $"@{token}";
+                    stringBuilder.Replace(tokenName, _valueProvider.Get(tokenName, request, data));
+                }
+            }
+
             foreach (var value in data.Values)
             {
                 stringBuilder.Replace($"{{{value.Key}}}", value.Value.ToString());
@@ -192,7 +223,13 @@ namespace NGate.Framework
 
             if (_configuration.Config.PassQueryString != false && routeConfig.Route.PassQueryString != false)
             {
-                stringBuilder.Append(request.QueryString.ToString());
+                var queryString = request.QueryString.ToString();
+                if (downstream.Contains("?") && !string.IsNullOrWhiteSpace(queryString))
+                {
+                    queryString = $"&{queryString.Substring(1, queryString.Length - 1)}";
+                }
+
+                stringBuilder.Append(queryString);
             }
 
             return stringBuilder.ToString();

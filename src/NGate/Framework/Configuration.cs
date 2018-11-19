@@ -21,12 +21,19 @@ namespace NGate.Framework
     public class Config
     {
         public bool UseErrorHandler { get; set; }
-        public bool GenerateResourceId { get; set; }
+        public bool UseForwardedHeaders { get; set; }
         public bool? PassQueryString { get; set; }
         public Authentication Authentication { get; set; }
         public string ModulesPath { get; set; }
         public string SettingsPath { get; set; }
         public Cors Cors { get; set; }
+        public ResourceId ResourceId { get; set; }
+    }
+
+    public class ResourceId
+    {
+        public bool Generate { get; set; }
+        public string Property { get; set; }
     }
 
     public class Cors

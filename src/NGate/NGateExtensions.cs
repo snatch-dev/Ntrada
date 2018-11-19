@@ -6,6 +6,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -50,6 +51,7 @@ namespace NGate
             var configuration = deserializer.Deserialize<Configuration>(text);
             var authenticationConfig = configuration.Config.Authentication;
             var useJwt = authenticationConfig?.Type?.ToLowerInvariant() == "jwt";
+            var useForwardedHeaders = configuration.Config.UseForwardedHeaders;
             var cors = configuration.Config?.Cors;
             var useCors = cors?.Enabled == true;
             var useErrorHandler = configuration.Config?.UseErrorHandler == true;
@@ -159,6 +161,14 @@ namespace NGate
                     if (useJwt)
                     {
                         app.UseAuthentication();
+                    }
+
+                    if (useForwardedHeaders)
+                    {
+                        app.UseForwardedHeaders(new ForwardedHeadersOptions
+                        {
+                            ForwardedHeaders = ForwardedHeaders.All
+                        });
                     }
 
                     var routeProvider = new RouteProvider(app.ApplicationServices,

@@ -1,9 +1,12 @@
 config:
-  generate_resource_id: true
-  pass_query_string: true
   use_error_handler: true
+  use_forwarded_headers: true
+  pass_query_string: true
   modules_path: Modules
   settings_path: Settings
+  resource_id:
+    property: id
+    generate: true
   cors:
     enabled: true
     headers:

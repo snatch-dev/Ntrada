@@ -16,12 +16,8 @@ Content-Type: application/application/json
 
 
 ###
-GET {{url}}/orders
+GET {{url}}/orders?page=2&results=15
 authorization: Bearer {{accessToken}}
-content-type: application/json
-
-{
-}
 
 ###
 GET {{url}}/products/5
@@ -44,3 +40,7 @@ content-type: application/json
 {
 	"test": 123
 }
+
+###
+DELETE {{url}}/orders/123
+authorization: Bearer {{accessToken}}
