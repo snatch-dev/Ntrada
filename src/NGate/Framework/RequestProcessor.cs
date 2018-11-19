@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json;
+using NJsonSchema.Validation;
 
 namespace NGate.Framework
 {
@@ -15,12 +16,15 @@ namespace NGate.Framework
     {
         private readonly Configuration _configuration;
         private readonly IValueProvider _valueProvider;
-        private readonly IDictionary<string, ExpandoObject> _messages;
+        private readonly ISchemaValidator _schemaValidator;
+        private readonly IDictionary<string, KeyValuePair<ExpandoObject, string>> _messages;
 
-        public RequestProcessor(Configuration configuration, IValueProvider valueProvider)
+        public RequestProcessor(Configuration configuration, IValueProvider valueProvider,
+            ISchemaValidator schemaValidator)
         {
             _configuration = configuration;
             _valueProvider = valueProvider;
+            _schemaValidator = schemaValidator;
             _messages = LoadMessages(_configuration);
         }
 
@@ -41,10 +45,27 @@ namespace NGate.Framework
                 Downstream = GetDownstream(routeConfig, request, data),
                 Payload = await GetPayloadAsync(resourceId, routeConfig.Route, request, data),
                 UserId = _valueProvider.Get("@user_id", request, data),
-                ContentType = contentType
+                ContentType = contentType,
+
             };
+            if (_messages.TryGetValue(routeConfig.Route.Upstream, out var dataAndSchema))
+            {
+                executionData.ValidationErrors = await GetValidationErrorsAsync(routeConfig.Route,
+                    executionData.Payload, dataAndSchema.Value);
+            }
 
             return executionData;
+        }
+
+        private async Task<IEnumerable<string>> GetValidationErrorsAsync(Route route,
+            ExpandoObject payload, string schema)
+        {
+            if (string.IsNullOrWhiteSpace(schema))
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            return await _schemaValidator.ValidateAsync(JsonConvert.SerializeObject(payload), schema);
         }
 
         private async Task<ExpandoObject> GetPayloadAsync(string resourceId, Route route, HttpRequest request,
@@ -116,7 +137,7 @@ namespace NGate.Framework
 
         private object GetObjectFromPayload(Route route, string content)
         {
-            var payloadValue = _messages[route.Upstream];
+            var payloadValue = _messages[route.Upstream].Key;
             var request = JsonConvert.DeserializeObject(content, payloadValue.GetType());
             var payloadValues = (IDictionary<string, object>) payloadValue;
             var requestValues = (IDictionary<string, object>) request;
@@ -140,9 +161,9 @@ namespace NGate.Framework
             return JsonConvert.DeserializeObject(content, payload.GetType());
         }
 
-        private Dictionary<string, ExpandoObject> LoadMessages(Configuration configuration)
+        private Dictionary<string, KeyValuePair<ExpandoObject, string>> LoadMessages(Configuration configuration)
         {
-            var messages = new Dictionary<string, ExpandoObject>();
+            var messages = new Dictionary<string, KeyValuePair<ExpandoObject, string>>();
             var modulesPath = configuration.Config.ModulesPath;
             modulesPath = string.IsNullOrWhiteSpace(modulesPath)
                 ? string.Empty
@@ -157,11 +178,20 @@ namespace NGate.Framework
                         continue;
                     }
 
-                    var fullPath = $"{modulesPath}{module.Name}/payloads/{route.Payload}";
+                    var payloadsFolder = configuration.Config.PayloadsFolder;
+                    var fullPath = $"{modulesPath}{module.Name}/{payloadsFolder}/{route.Payload}";
                     var fullJsonPath = fullPath.EndsWith(".json") ? fullPath : $"{fullPath}.json";
                     if (!File.Exists(fullJsonPath))
                     {
                         continue;
+                    }
+
+                    var schemaPath = $"{modulesPath}{module.Name}/{payloadsFolder}/{route.Schema}";
+                    var fullSchemaPath = schemaPath.EndsWith(".json") ? schemaPath : $"{schemaPath}.json";
+                    var schema = string.Empty;
+                    if (File.Exists(fullSchemaPath))
+                    {
+                        schema = File.ReadAllText(fullSchemaPath);
                     }
 
                     var json = File.ReadAllText(fullJsonPath);
@@ -190,7 +220,7 @@ namespace NGate.Framework
                         upstream = "/";
                     }
 
-                    messages.Add(upstream, expandoObject);
+                    messages.Add(upstream, new KeyValuePair<ExpandoObject, string>(expandoObject, schema));
                 }
             }
 

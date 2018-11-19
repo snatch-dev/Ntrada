@@ -26,6 +26,7 @@ namespace NGate.Framework
         public Authentication Authentication { get; set; }
         public string ModulesPath { get; set; }
         public string SettingsPath { get; set; }
+        public string PayloadsFolder { get; set; }
         public Cors Cors { get; set; }
         public ResourceId ResourceId { get; set; }
     }
@@ -74,7 +75,7 @@ namespace NGate.Framework
         public bool? PassQueryString { get; set; }
         public string ReturnValue { get; set; }
         public string Payload { get; set; }
-        public string Scheme { get; set; }
+        public string Schema { get; set; }
         public string Exchange { get; set; }
         public string RoutingKey { get; set; }
         public bool? Auth { get; set; }

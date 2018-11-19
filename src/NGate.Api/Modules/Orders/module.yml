@@ -1,4 +1,4 @@
-name: orders
+name: Orders
 path: /orders
 routes:
 - upstream: /
@@ -19,7 +19,7 @@ routes:
   transform:
   - test:nothing
   payload: create_order
-  scheme: create_order.scheme
+  schema: create_order.schema
 - upstream: /sync/{orderId}
   generate_resource_id: true
   method: POST

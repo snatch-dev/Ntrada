@@ -4,6 +4,7 @@ config:
   pass_query_string: true
   modules_path: Modules
   settings_path: Settings
+  payloads_folder: Payloads
   resource_id:
     property: id
     generate: true

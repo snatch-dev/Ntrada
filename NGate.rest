@@ -10,7 +10,7 @@ Content-Type: application/application/json
 	"name": "My product 1",
 	"description": "My product 1 description",
 	"vendor": "My company",
-	"price": 2500,
+	"price": 1,
     "test": "test field to be removed"
 }
 

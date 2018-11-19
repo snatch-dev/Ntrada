@@ -163,8 +163,13 @@ namespace NGate.Framework
                     throw new InvalidOperationException($"Extension for: '{name}' was not found.");
                 }
 
-                var dispatcher = _extensions[name];
                 var executionData = await _requestProcessor.ProcessAsync(routeConfig, request, response, data);
+                if (!await IsPayloadValidAsync(executionData, response))
+                {
+                    return;
+                }
+
+                var dispatcher = _extensions[name];
                 await dispatcher.ExecuteAsync(executionData);
                 response.Headers.Add("X-Operation", executionData.RequestId);
                 response.Headers.Add("X-Resource", executionData.ResourceId);
@@ -197,6 +202,11 @@ namespace NGate.Framework
                 }
 
                 var executionData = await _requestProcessor.ProcessAsync(routeConfig, request, response, data);
+                if (!await IsPayloadValidAsync(executionData, response))
+                {
+                    return;
+                }
+
                 if (string.IsNullOrWhiteSpace(executionData.Downstream))
                 {
                     return;
@@ -212,6 +222,21 @@ namespace NGate.Framework
                 var content = await httpResponse.Content.ReadAsStringAsync();
                 await response.WriteAsync(content);
             };
+
+        private async Task<bool> IsPayloadValidAsync(ExecutionData executionData, HttpResponse httpResponse)
+        {
+            if (executionData.IsPayloadValid)
+            {
+                return true;
+            }
+
+            var response = new {errors = executionData.ValidationErrors};
+            var payload = JsonConvert.SerializeObject(response);
+            httpResponse.ContentType = "application/json";
+            await httpResponse.WriteAsync(payload);
+
+            return false;
+        }
 
         private async Task<bool> CanExecuteAsync(HttpRequest request, HttpResponse response,
             RouteData data, RouteConfig routeConfig)

@@ -49,6 +49,11 @@ namespace NGate
                 .WithNamingConvention(new UnderscoredNamingConvention())
                 .Build();
             var configuration = deserializer.Deserialize<Configuration>(text);
+            if (configuration.Config == null)
+            {
+                configuration.Config = new Config();
+            }
+
             var authenticationConfig = configuration.Config.Authentication;
             var useJwt = authenticationConfig?.Type?.ToLowerInvariant() == "jwt";
             var useForwardedHeaders = configuration.Config.UseForwardedHeaders;
@@ -64,6 +69,17 @@ namespace NGate
             {
                 configuration.Config.SettingsPath = configuration.Config.SettingsPath
                     .Substring(0, configuration.Config.SettingsPath.Length - 1);
+            }
+
+            if (configuration.Config.PayloadsFolder == null)
+            {
+                configuration.Config.PayloadsFolder = "Payloads";
+            }
+
+            if (configuration.Config.PayloadsFolder.EndsWith("/"))
+            {
+                configuration.Config.PayloadsFolder = configuration.Config.PayloadsFolder
+                    .Substring(0, configuration.Config.PayloadsFolder.Length - 1);
             }
 
             var modules = new HashSet<Module>();
@@ -172,7 +188,7 @@ namespace NGate
                     }
 
                     var routeProvider = new RouteProvider(app.ApplicationServices,
-                        new RequestProcessor(configuration, new ValueProvider()),
+                        new RequestProcessor(configuration, new ValueProvider(), new SchemaValidator()),
                         new RouteConfigurator(configuration), configuration);
                     app.UseRouter(routeProvider.Build());
                 });

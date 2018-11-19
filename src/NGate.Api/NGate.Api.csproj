@@ -18,4 +18,19 @@
     <ProjectReference Include="..\NGate\NGate.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="Modules\Products\Payloads\create_product.schema.json">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Modules\Orders\Payloads\create_order.json">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Update="Modules\Orders\Payloads\cancel_order.json">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

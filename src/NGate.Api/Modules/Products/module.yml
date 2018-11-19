@@ -1,4 +1,4 @@
-name: products
+name: Products
 path: /products
 routes:
 - upstream: /
@@ -15,7 +15,7 @@ routes:
   exchange: products.create_product
   routing_key: create_product
   payload: create_product
-  scheme: create_product.scheme
+  schema: create_product.schema
   claims:
     role: admin
   policies:
