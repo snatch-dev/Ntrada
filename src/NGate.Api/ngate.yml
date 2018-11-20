@@ -37,10 +37,12 @@ auth:
       role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
   policies:
     admin:
-      role: admin
+      claims:
+        role: admin
     product_manager:
-      role: merchant
-      access: create_product     
+      claims:
+        role: manager
+        access: create_product
       
 extensions:
   dispatcher:

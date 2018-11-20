@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NGate.Framework
 {
@@ -13,7 +14,7 @@ namespace NGate.Framework
         public string PayloadsFolder { get; set; }
         public Cors Cors { get; set; }
         public ResourceId ResourceId { get; set; }
-        public IEnumerable<Module> Modules { get; set; }
+        public IEnumerable<Module> Modules { get; set; } = Enumerable.Empty<Module>();
         public IDictionary<string, Extension> Extensions { get; set; } = new Dictionary<string, Extension>();
         public Http Http { get; set; }
     }
@@ -30,8 +31,8 @@ namespace NGate.Framework
         public string Name { get; set; }
         public string Path { get; set; }
         public bool? Enabled { get; set; }
-        public IEnumerable<Route> Routes { get; set; }
-        public IDictionary<string, Service> Services { get; set; }
+        public IEnumerable<Route> Routes { get; set; } = Enumerable.Empty<Route>();
+        public IDictionary<string, Service> Services { get; set; } = new Dictionary<string, Service>();
     }
 
     public class ResourceId
@@ -51,8 +52,13 @@ namespace NGate.Framework
         public string Type { get; set; }
         public bool Global { get; set; }
         public Jwt Jwt { get; set; }
-        public IDictionary<string, string> Claims { get; set; }
-        public IDictionary<string, IDictionary<string, string>> Policies { get; set; }
+        public IDictionary<string, string> Claims { get; set; } = new Dictionary<string, string>();
+        public IDictionary<string, Policy> Policies { get; set; } = new Dictionary<string, Policy>();
+    }
+
+    public class Policy
+    {
+        public IDictionary<string, string> Claims { get; set; } = new Dictionary<string, string>(); 
     }
 
     public class Jwt
@@ -60,9 +66,9 @@ namespace NGate.Framework
         public string Key { get; set; }
         public string Issuer { get; set; }
         public bool ValidateIssuer { get; set; }
-        public IEnumerable<string> Issuers { get; set; }
+        public IEnumerable<string> Issuers { get; set; } = Enumerable.Empty<string>();
         public string Audience { get; set; }
-        public IEnumerable<string> Audiences { get; set; }
+        public IEnumerable<string> Audiences { get; set; } = Enumerable.Empty<string>();
         public bool ValidateAudience { get; set; }
         public bool ValidateLifetime { get; set; }
     }
@@ -82,10 +88,10 @@ namespace NGate.Framework
         public string Exchange { get; set; }
         public string RoutingKey { get; set; }
         public bool? Auth { get; set; }
-        public IDictionary<string, string> Claims { get; set; }
-        public IEnumerable<string> Policies { get; set; }
-        public IEnumerable<string> Bind { get; set; }
-        public IEnumerable<string> Transform { get; set; }
+        public IDictionary<string, string> Claims { get; set; } = new Dictionary<string, string>();
+        public IEnumerable<string> Policies { get; set; } = Enumerable.Empty<string>();
+        public IEnumerable<string> Bind { get; set; } = Enumerable.Empty<string>();
+        public IEnumerable<string> Transform { get; set; } = Enumerable.Empty<string>();
     }
 
     public class Extension

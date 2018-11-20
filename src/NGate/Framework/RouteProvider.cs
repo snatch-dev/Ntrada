@@ -22,14 +22,17 @@ namespace NGate.Framework
         private readonly IServiceProvider _serviceProvider;
         private readonly IRequestProcessor _requestProcessor;
         private readonly IRouteConfigurator _routeConfigurator;
+        private readonly IAccessValidator _accessValidator;
         private readonly Configuration _configuration;
 
         public RouteProvider(IServiceProvider serviceProvider, IRequestProcessor requestProcessor,
-            IRouteConfigurator routeConfigurator, Configuration configuration)
+            IRouteConfigurator routeConfigurator, IAccessValidator accessValidator,
+            Configuration configuration)
         {
             _serviceProvider = serviceProvider;
             _requestProcessor = requestProcessor;
             _routeConfigurator = routeConfigurator;
+            _accessValidator = accessValidator;
             _configuration = configuration;
             var processors = new Dictionary<string, Func<RouteConfig, Func<HttpRequest, HttpResponse, RouteData, Task>>>
             {
@@ -267,39 +270,23 @@ namespace NGate.Framework
 
         private async Task<bool> CanExecuteAsync(HttpRequest request, HttpResponse response,
             RouteData data, RouteConfig routeConfig)
-            => await IsAuthorizedAsync(request, response, routeConfig);
-
-        private async Task<bool> IsAuthorizedAsync(HttpRequest request, HttpResponse response, RouteConfig routeConfig)
         {
-            if (_configuration.Auth?.Global != true
-                || (routeConfig.Route.Auth.HasValue && routeConfig.Route.Auth == false))
-            {
-                return true;
-            }
-
-            var result = await request.HttpContext.AuthenticateAsync();
-            if (!result.Succeeded)
+            var isAuthenticated = await _accessValidator.IsAuthenticatedAsync(request, routeConfig);
+            if (!isAuthenticated)
             {
                 response.StatusCode = 401;
 
                 return false;
             }
-
-            if (routeConfig.Route.Claims == null || !routeConfig.Route.Claims.Any())
+            
+            if (!_accessValidator.IsAuthorized(request.HttpContext.User, routeConfig))
             {
-                return true;
+                response.StatusCode = 403;
+
+                return false;
             }
 
-            var hasClaims = routeConfig.Claims.All(claim => request.HttpContext.User.Claims
-                .Any(c => c.Type == claim.Key && c.Value == claim.Value));
-            if (hasClaims)
-            {
-                return true;
-            }
-
-            response.StatusCode = 401;
-
-            return false;
+            return true;
         }
 
         private Func<Task<HttpResponseMessage>> GetRequest(ExecutionData executionData)

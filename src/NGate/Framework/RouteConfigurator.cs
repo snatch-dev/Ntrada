@@ -5,50 +5,37 @@ namespace NGate.Framework
 {
     public class RouteConfigurator : IRouteConfigurator
     {
+        private readonly IDictionary<string, string> _claims;
         private readonly Configuration _configuration;
 
         public RouteConfigurator(Configuration configuration)
         {
             _configuration = configuration;
+            _claims = _configuration?.Auth?.Claims ?? new Dictionary<string, string>();
         }
 
         public RouteConfig Configure(Module module, Route route)
             => new RouteConfig
             {
                 Route = route,
-                Claims = GetClaims(module, route),
-                Downstream = GetDownstream(module, route)
+                Downstream = GetDownstream(module, route),
+                Claims = GetClaims(route)
             };
 
-        private IDictionary<string, string> GetClaims(Module module, Route route)
+        private IDictionary<string, string> GetClaims(Route route)
         {
-            if (route.Claims == null || !route.Claims.Any())
+            if (route.Claims == null || !route.Claims.Any() || !_claims.Any())
             {
                 return new Dictionary<string, string>();
             }
 
-            var claims = _configuration?.Auth?.Claims;
-            if (claims == null || !claims.Any())
-            {
-                return route.Claims;
-            }
-
-            var mappedClaims = new Dictionary<string, string>();
-            foreach (var claim in route.Claims)
-            {
-                var key = claim.Key;
-                if (claims.TryGetValue(claim.Key, out var value))
-                {
-                    key = value;
-                }
-
-                mappedClaims[key] = claim.Value;
-            }
-
-            return mappedClaims;
+            return route.Claims.ToDictionary(c => GetClaimKey(c.Key), c => c.Value);
         }
 
-        private string GetDownstream(Module module, Route route)
+        private string GetClaimKey(string claim)
+            => _claims.TryGetValue(claim, out var value) ? value : claim;
+
+        private static string GetDownstream(Module module, Route route)
         {
             if (string.IsNullOrWhiteSpace(route.Downstream))
             {

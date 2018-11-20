@@ -7,6 +7,5 @@ namespace NGate.Framework
         public Route Route { get; set; }
         public string Downstream { get; set; }
         public IDictionary<string, string> Claims { get; set; }
-        public IEnumerable<string> Policies { get; set; }
     }
 }

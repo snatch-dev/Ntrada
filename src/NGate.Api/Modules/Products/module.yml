@@ -21,6 +21,7 @@ routes:
   claims:
     role: admin
   policies:
+  - admin
   - product_manager
 services:
   products-service:
