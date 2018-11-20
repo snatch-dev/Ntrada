@@ -4,9 +4,25 @@ namespace NGate.Framework
 {
     public class Configuration
     {
-        public Config Config { get; set; }
+        public bool UseErrorHandler { get; set; }
+        public bool UseForwardedHeaders { get; set; }
+        public bool? PassQueryString { get; set; }
+        public Auth Auth { get; set; }
+        public string ModulesPath { get; set; }
+        public string SettingsPath { get; set; }
+        public string PayloadsFolder { get; set; }
+        public Cors Cors { get; set; }
+        public ResourceId ResourceId { get; set; }
         public IEnumerable<Module> Modules { get; set; }
         public IDictionary<string, Extension> Extensions { get; set; }
+        public Retry Retry { get; set; }
+    }
+
+    public class Retry
+    {
+        public int Retries { get; set; }
+        public bool Exponential { get; set; }
+        public int Interval { get; set; }
     }
 
     public class Module
@@ -16,19 +32,6 @@ namespace NGate.Framework
         public bool? Enabled { get; set; }
         public IEnumerable<Route> Routes { get; set; }
         public IDictionary<string, Service> Services { get; set; }
-    }
-
-    public class Config
-    {
-        public bool UseErrorHandler { get; set; }
-        public bool UseForwardedHeaders { get; set; }
-        public bool? PassQueryString { get; set; }
-        public Authentication Authentication { get; set; }
-        public string ModulesPath { get; set; }
-        public string SettingsPath { get; set; }
-        public string PayloadsFolder { get; set; }
-        public Cors Cors { get; set; }
-        public ResourceId ResourceId { get; set; }
     }
 
     public class ResourceId
@@ -43,7 +46,7 @@ namespace NGate.Framework
         public IEnumerable<string> Headers { get; set; }
     }
 
-    public class Authentication
+    public class Auth
     {
         public string Type { get; set; }
         public bool Global { get; set; }

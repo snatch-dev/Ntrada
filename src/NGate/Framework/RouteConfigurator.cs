@@ -27,7 +27,7 @@ namespace NGate.Framework
                 return new Dictionary<string, string>();
             }
 
-            var claims = _configuration.Config?.Authentication?.Claims;
+            var claims = _configuration?.Auth?.Claims;
             if (claims == null || !claims.Any())
             {
                 return route.Claims;

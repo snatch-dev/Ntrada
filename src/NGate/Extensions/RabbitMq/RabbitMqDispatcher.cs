@@ -37,7 +37,7 @@ namespace NGate.Extensions.RabbitMq
             var configurationPath = extension.Configuration;
             if (!File.Exists(configurationPath))
             {
-                configurationPath = $"{_configuration.Config.SettingsPath}/{configurationPath}";
+                configurationPath = $"{_configuration.SettingsPath}/{configurationPath}";
                 if (!File.Exists(configurationPath))
                 {
                     throw new Exception($"Configuration for an extension: '{Name}'," +

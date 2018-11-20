@@ -96,9 +96,9 @@ namespace NGate.Framework
                 : GetObject(content);
 
             var commandValues = (IDictionary<string, object>) command;
-            if (_configuration.Config.ResourceId?.Generate == true && (route.GenerateResourceId != false))
+            if (_configuration.ResourceId?.Generate == true && (route.GenerateResourceId != false))
             {
-                var resourceIdProperty = _configuration.Config.ResourceId.Property;
+                var resourceIdProperty = _configuration.ResourceId.Property;
                 if (string.IsNullOrWhiteSpace(resourceIdProperty))
                 {
                     resourceIdProperty = "id";
@@ -164,7 +164,7 @@ namespace NGate.Framework
         private Dictionary<string, KeyValuePair<ExpandoObject, string>> LoadMessages(Configuration configuration)
         {
             var messages = new Dictionary<string, KeyValuePair<ExpandoObject, string>>();
-            var modulesPath = configuration.Config.ModulesPath;
+            var modulesPath = configuration.ModulesPath;
             modulesPath = string.IsNullOrWhiteSpace(modulesPath)
                 ? string.Empty
                 : (modulesPath.EndsWith("/") ? modulesPath : $"{modulesPath}/");
@@ -178,7 +178,7 @@ namespace NGate.Framework
                         continue;
                     }
 
-                    var payloadsFolder = configuration.Config.PayloadsFolder;
+                    var payloadsFolder = configuration.PayloadsFolder;
                     var fullPath = $"{modulesPath}{module.Name}/{payloadsFolder}/{route.Payload}";
                     var fullJsonPath = fullPath.EndsWith(".json") ? fullPath : $"{fullPath}.json";
                     if (!File.Exists(fullJsonPath))
@@ -251,7 +251,7 @@ namespace NGate.Framework
                 stringBuilder.Replace($"{{{value.Key}}}", value.Value.ToString());
             }
 
-            if (_configuration.Config.PassQueryString != false && routeConfig.Route.PassQueryString != false)
+            if (_configuration.PassQueryString != false && routeConfig.Route.PassQueryString != false)
             {
                 var queryString = request.QueryString.ToString();
                 if (downstream.Contains("?") && !string.IsNullOrWhiteSpace(queryString))

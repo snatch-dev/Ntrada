@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using NGate.Framework;
 using NGate.Middleware;
+using Polly;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -49,43 +50,39 @@ namespace NGate
                 .WithNamingConvention(new UnderscoredNamingConvention())
                 .Build();
             var configuration = deserializer.Deserialize<Configuration>(text);
-            if (configuration.Config == null)
-            {
-                configuration.Config = new Config();
-            }
-
-            var authenticationConfig = configuration.Config.Authentication;
+            var authenticationConfig = configuration.Auth;
             var useJwt = authenticationConfig?.Type?.ToLowerInvariant() == "jwt";
-            var useForwardedHeaders = configuration.Config.UseForwardedHeaders;
-            var cors = configuration.Config?.Cors;
+            var useForwardedHeaders = configuration.UseForwardedHeaders;
+            var cors = configuration?.Cors;
             var useCors = cors?.Enabled == true;
-            var useErrorHandler = configuration.Config?.UseErrorHandler == true;
-            if (configuration.Config.SettingsPath == null)
+            var useErrorHandler = configuration.UseErrorHandler == true;
+            var retry = configuration.Retry ?? new Retry();
+            if (configuration.SettingsPath == null)
             {
-                configuration.Config.SettingsPath = "Settings";
+                configuration.SettingsPath = "Settings";
             }
 
-            if (configuration.Config.SettingsPath.EndsWith("/"))
+            if (configuration.SettingsPath.EndsWith("/"))
             {
-                configuration.Config.SettingsPath = configuration.Config.SettingsPath
-                    .Substring(0, configuration.Config.SettingsPath.Length - 1);
+                configuration.SettingsPath = configuration.SettingsPath
+                    .Substring(0, configuration.SettingsPath.Length - 1);
             }
 
-            if (configuration.Config.PayloadsFolder == null)
+            if (configuration.PayloadsFolder == null)
             {
-                configuration.Config.PayloadsFolder = "Payloads";
+                configuration.PayloadsFolder = "Payloads";
             }
 
-            if (configuration.Config.PayloadsFolder.EndsWith("/"))
+            if (configuration.PayloadsFolder.EndsWith("/"))
             {
-                configuration.Config.PayloadsFolder = configuration.Config.PayloadsFolder
-                    .Substring(0, configuration.Config.PayloadsFolder.Length - 1);
+                configuration.PayloadsFolder = configuration.PayloadsFolder
+                    .Substring(0, configuration.PayloadsFolder.Length - 1);
             }
 
             var modules = new HashSet<Module>();
-            var modulesPath = string.IsNullOrWhiteSpace(configuration.Config.ModulesPath)
+            var modulesPath = string.IsNullOrWhiteSpace(configuration.ModulesPath)
                 ? "Modules"
-                : configuration.Config.ModulesPath;
+                : configuration.ModulesPath;
             if (modulesPath.EndsWith("/"))
             {
                 modulesPath = modulesPath.Substring(0, modulesPath.Length - 1);
@@ -111,13 +108,25 @@ namespace NGate
                 allModules.AddRange(modules);
                 configuration.Modules = allModules;
             }
-
+            
             return webHostBuilder.ConfigureServices(s =>
                 {
                     s.AddMvcCore()
                         .AddJsonFormatters()
                         .AddJsonOptions(o => o.SerializerSettings.Formatting = Formatting.Indented);
-                    s.AddHttpClient();
+
+                    var httpClientBuilder = s.AddHttpClient("ngate");
+                    httpClientBuilder.AddTransientHttpErrorPolicy(p =>
+                        p.WaitAndRetryAsync(retry.Retries, retryAttempt =>
+                        {
+                            var interval = retry.Exponential
+                                ? Math.Pow(retry.Interval, retryAttempt)
+                                : retry.Interval;
+
+                            return TimeSpan.FromSeconds(interval);
+                        }));
+
+                    
                     s.AddLogging();
                     if (authenticationConfig == null || !useJwt)
                     {
@@ -193,5 +202,10 @@ namespace NGate
                     app.UseRouter(routeProvider.Build());
                 });
         }
+    }
+
+    public class Client
+    {
+        
     }
 }

@@ -1,45 +1,52 @@
-config:
-  use_error_handler: true
-  use_forwarded_headers: true
-  pass_query_string: true
-  modules_path: Modules
-  settings_path: Settings
-  payloads_folder: Payloads
-  resource_id:
-    property: id
-    generate: true
-  cors:
-    enabled: true
-    headers:
-      - X-Operation
-      - X-Resource
-      - X-Total-Count
-  authentication:
-    type: jwt
-    global: true
-    jwt:
-      key: JLBMU2VbJZmt42sUwByUpJJF6Y5mG2gPNU9sQFUpJFcGFJdyKxskR3bxh527kax2UcXHvB
-      issuer: dshop-identity-service
-      issuers:
-      validate_issuer: true
-      audience:
-      audiences:
-      validate_audience: false
-      validate_lifetime: false
-    claims:
-        role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
-    policies:
-      admin:
-        role: admin
-      product_manager:
-        role: merchant
-        access: create_product
-        
+use_error_handler: true
+use_forwarded_headers: true
+pass_query_string: true
+modules_path: Modules
+settings_path: Settings
+payloads_folder: Payloads
+
+resource_id:
+  property: id
+  generate: true
+  
+cors:
+  enabled: true
+  headers:
+    - X-Operation
+    - X-Resource
+    - X-Total-Count
+
+retry:
+  retries: 3
+  interval: 2
+  exponential: true
+
+auth:
+  type: jwt
+  global: true
+  jwt:
+    key: JLBMU2VbJZmt42sUwByUpJJF6Y5mG2gPNU9sQFUpJFcGFJdyKxskR3bxh527kax2UcXHvB
+    issuer: dshop-identity-service
+    issuers:
+    validate_issuer: true
+    audience:
+    audiences:
+    validate_audience: false
+    validate_lifetime: false
+  claims:
+      role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
+  policies:
+    admin:
+      role: admin
+    product_manager:
+      role: merchant
+      access: create_product     
+      
 extensions:
   dispatcher:
     use: rabbitmq
     configuration: rabbitmq.json
-
+    
 modules:
   - name: home
     routes:

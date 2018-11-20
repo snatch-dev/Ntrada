@@ -219,6 +219,12 @@ namespace NGate.Framework
                 }
 
                 var httpResponse = await httpRequest();
+                if (!httpResponse.IsSuccessStatusCode)
+                {
+                    response.StatusCode = (int) httpResponse.StatusCode;
+                    return;
+                }
+
                 var content = await httpResponse.Content.ReadAsStringAsync();
                 await response.WriteAsync(content);
             };
@@ -244,7 +250,7 @@ namespace NGate.Framework
 
         private async Task<bool> IsAuthorizedAsync(HttpRequest request, HttpResponse response, RouteConfig routeConfig)
         {
-            if (_configuration.Config.Authentication?.Global != true
+            if (_configuration.Auth?.Global != true
                 || (routeConfig.Route.Auth.HasValue && routeConfig.Route.Auth == false))
             {
                 return true;
@@ -278,7 +284,7 @@ namespace NGate.Framework
         private Func<Task<HttpResponseMessage>> GetRequest(ExecutionData executionData)
         {
             var url = executionData.Downstream;
-            var httpClient = _serviceProvider.GetService<IHttpClientFactory>().CreateClient();
+            var httpClient = _serviceProvider.GetService<IHttpClientFactory>().CreateClient("ngate");
             var payload = GetPayload(executionData.Payload, executionData.ContentType);
             var method = (string.IsNullOrWhiteSpace(executionData.Route.DownstreamMethod)
                     ? executionData.Route.Method

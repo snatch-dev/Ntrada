@@ -5,10 +5,10 @@ routes:
   method: GET
   use: downstream
   downstream: products-service/products
-- upstream: /{productId}
+- upstream: /{id:guid}
   method: GET
   use: downstream
-  downstream: products-service/products/{productId}
+  downstream: products-service/products/{id}
 - upstream: /
   method: POST
   use: dispatcher
