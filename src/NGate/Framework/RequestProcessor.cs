@@ -57,12 +57,12 @@ namespace NGate.Framework
             return executionData;
         }
 
-        private async Task<IEnumerable<string>> GetValidationErrorsAsync(Route route,
+        private async Task<IEnumerable<Error>> GetValidationErrorsAsync(Route route,
             ExpandoObject payload, string schema)
         {
             if (string.IsNullOrWhiteSpace(schema))
             {
-                return Enumerable.Empty<string>();
+                return Enumerable.Empty<Error>();
             }
 
             return await _schemaValidator.ValidateAsync(JsonConvert.SerializeObject(payload), schema);

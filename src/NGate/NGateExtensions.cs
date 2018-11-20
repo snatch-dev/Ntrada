@@ -208,6 +208,9 @@ namespace NGate
                     var routeProvider = new RouteProvider(app.ApplicationServices,
                         new RequestProcessor(configuration, new ValueProvider(), new SchemaValidator()),
                         new RouteConfigurator(configuration), configuration);
+                    
+                    
+                    
                     app.UseRouter(routeProvider.Build());
                 });
         }

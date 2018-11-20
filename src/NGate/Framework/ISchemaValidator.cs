@@ -5,6 +5,6 @@ namespace NGate.Framework
 {
     public interface ISchemaValidator
     {
-        Task<IEnumerable<string>> ValidateAsync(string payload, string schema);
+        Task<IEnumerable<Error>> ValidateAsync(string payload, string schema);
     }
 }

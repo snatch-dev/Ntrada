@@ -14,7 +14,7 @@ namespace NGate.Framework
         public Cors Cors { get; set; }
         public ResourceId ResourceId { get; set; }
         public IEnumerable<Module> Modules { get; set; }
-        public IDictionary<string, Extension> Extensions { get; set; }
+        public IDictionary<string, Extension> Extensions { get; set; } = new Dictionary<string, Extension>();
         public Http Http { get; set; }
     }
 

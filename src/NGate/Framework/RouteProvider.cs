@@ -15,6 +15,8 @@ namespace NGate.Framework
 {
     public class RouteProvider
     {
+        private static readonly string[] DefaultExtensions = {"downstream", "return_value"};
+        private static readonly string[] AvailableExtensions = {"dispatcher"};
         private readonly IDictionary<string, Action<IRouteBuilder, string, RouteConfig>> _methods;
         private readonly IDictionary<string, IExtension> _extensions;
         private readonly IServiceProvider _serviceProvider;
@@ -53,6 +55,26 @@ namespace NGate.Framework
 
         private IDictionary<string, IExtension> LoadExtensions()
         {
+            var usedExtensions = _configuration.Modules
+                .SelectMany(m => m.Routes)
+                .Select(r => r.Use)
+                .Distinct()
+                .Except(DefaultExtensions)
+                .ToArray();
+
+            var unavailableExtensions = usedExtensions.Except(AvailableExtensions).ToArray();
+            if (unavailableExtensions.Any())
+            {
+                throw new Exception($"Unavailable extensions: '{string.Join(", ", unavailableExtensions)}'");
+            }
+
+            var enabledExtensions = _configuration.Extensions.Select(e => e.Key);
+            var undefinedExtensions = usedExtensions.Except(enabledExtensions).ToArray();
+            if (undefinedExtensions.Any())
+            {
+                throw new Exception($"Undefined extensions: '{string.Join(", ", undefinedExtensions)}'");
+            }
+
             var extensions = new Dictionary<string, IExtension>();
 
             if (_configuration.Extensions == null)

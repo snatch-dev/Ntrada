@@ -15,7 +15,7 @@ namespace NGate.Framework
         public RouteData Data { get; set; }
         public string Downstream { get; set; }
         public ExpandoObject Payload { get; set; }
-        public IEnumerable<string> ValidationErrors { get; set; } = Enumerable.Empty<string>();
+        public IEnumerable<Error> ValidationErrors { get; set; } = Enumerable.Empty<Error>();
         public bool IsPayloadValid => !ValidationErrors.Any();
         public string ContentType { get; set; }
         public string ResourceId { get; set; }

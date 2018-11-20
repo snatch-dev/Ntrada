@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NGate.Framework;
 
 namespace NGate.Middleware
 {
@@ -28,13 +29,23 @@ namespace NGate.Middleware
                 await HandleErrorAsync(context, exception);
             }
         }
-        
+
         private static Task HandleErrorAsync(HttpContext context, Exception exception)
         {
             var errorCode = "error";
             var statusCode = HttpStatusCode.BadRequest;
             var message = exception.Message;
-            var response = new {code = errorCode, message = message};
+            var response = new
+            {
+                errors = new[]
+                {
+                    new Error
+                    {
+                        Code = errorCode,
+                        Message = message,
+                    }
+                }
+            };
             var payload = JsonConvert.SerializeObject(response);
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int) statusCode;

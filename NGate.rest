@@ -14,7 +14,6 @@ Content-Type: application/application/json
     "test": "test field to be removed"
 }
 
-
 ###
 GET {{url}}/orders?page=2&results=15
 authorization: Bearer {{accessToken}}
