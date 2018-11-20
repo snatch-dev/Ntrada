@@ -56,7 +56,7 @@ namespace NGate
             var cors = configuration?.Cors;
             var useCors = cors?.Enabled == true;
             var useErrorHandler = configuration.UseErrorHandler == true;
-            var retry = configuration.Retry ?? new Retry();
+            var http = configuration.Http ?? new Http();
             if (configuration.SettingsPath == null)
             {
                 configuration.SettingsPath = "Settings";
@@ -108,7 +108,7 @@ namespace NGate
                 allModules.AddRange(modules);
                 configuration.Modules = allModules;
             }
-            
+
             return webHostBuilder.ConfigureServices(s =>
                 {
                     s.AddMvcCore()
@@ -117,16 +117,16 @@ namespace NGate
 
                     var httpClientBuilder = s.AddHttpClient("ngate");
                     httpClientBuilder.AddTransientHttpErrorPolicy(p =>
-                        p.WaitAndRetryAsync(retry.Retries, retryAttempt =>
+                        p.WaitAndRetryAsync(http.Retries, retryAttempt =>
                         {
-                            var interval = retry.Exponential
-                                ? Math.Pow(retry.Interval, retryAttempt)
-                                : retry.Interval;
+                            var interval = http.Exponential
+                                ? Math.Pow(http.Interval, retryAttempt)
+                                : http.Interval;
 
                             return TimeSpan.FromSeconds(interval);
                         }));
 
-                    
+
                     s.AddLogging();
                     if (authenticationConfig == null || !useJwt)
                     {
@@ -196,16 +196,20 @@ namespace NGate
                         });
                     }
 
+                    foreach (var route in configuration.Modules.SelectMany(m => m.Routes))
+                    {
+                        route.Method =
+                            (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
+                        route.DownstreamMethod =
+                            (string.IsNullOrWhiteSpace(route.DownstreamMethod) ? route.Method : route.DownstreamMethod)
+                            .ToLowerInvariant();
+                    }
+
                     var routeProvider = new RouteProvider(app.ApplicationServices,
                         new RequestProcessor(configuration, new ValueProvider(), new SchemaValidator()),
                         new RouteConfigurator(configuration), configuration);
                     app.UseRouter(routeProvider.Build());
                 });
         }
-    }
-
-    public class Client
-    {
-        
     }
 }

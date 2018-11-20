@@ -121,7 +121,6 @@ namespace NGate.Framework
 
         private void BuildRoutes(IRouteBuilder routeBuilder, Module module, Route route)
         {
-            route.Method = (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
             var upstream = string.IsNullOrWhiteSpace(route.Upstream) ? string.Empty : route.Upstream;
             if (!string.IsNullOrWhiteSpace(module.Path))
             {

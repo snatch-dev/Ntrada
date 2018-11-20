@@ -48,7 +48,7 @@ namespace NGate.Framework
                 ContentType = contentType,
 
             };
-            if (_messages.TryGetValue(routeConfig.Route.Upstream, out var dataAndSchema))
+            if (_messages.TryGetValue(GetMessagesKey(routeConfig.Route), out var dataAndSchema))
             {
                 executionData.ValidationErrors = await GetValidationErrorsAsync(routeConfig.Route,
                     executionData.Payload, dataAndSchema.Value);
@@ -91,7 +91,7 @@ namespace NGate.Framework
                 content = "{}";
             }
 
-            var command = _messages.ContainsKey(route.Upstream)
+            var command = _messages.ContainsKey(GetMessagesKey(route))
                 ? GetObjectFromPayload(route, content)
                 : GetObject(content);
 
@@ -137,7 +137,7 @@ namespace NGate.Framework
 
         private object GetObjectFromPayload(Route route, string content)
         {
-            var payloadValue = _messages[route.Upstream].Key;
+            var payloadValue = _messages[GetMessagesKey(route)].Key;
             var request = JsonConvert.DeserializeObject(content, payloadValue.GetType());
             var payloadValues = (IDictionary<string, object>) payloadValue;
             var requestValues = (IDictionary<string, object>) request;
@@ -220,7 +220,8 @@ namespace NGate.Framework
                         upstream = "/";
                     }
 
-                    messages.Add(upstream, new KeyValuePair<ExpandoObject, string>(expandoObject, schema));
+                    messages.Add(GetMessagesKey(route.Method, upstream),
+                        new KeyValuePair<ExpandoObject, string>(expandoObject, schema));
                 }
             }
 
@@ -264,5 +265,11 @@ namespace NGate.Framework
 
             return stringBuilder.ToString();
         }
+
+        private static string GetMessagesKey(Route route)
+            => GetMessagesKey(route.Method, route.Upstream);
+
+        private static string GetMessagesKey(string method, string upstream)
+            => $"{method?.ToLowerInvariant()}:{upstream}";
     }
 }

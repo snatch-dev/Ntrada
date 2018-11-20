@@ -16,9 +16,9 @@ cors:
     - X-Resource
     - X-Total-Count
 
-retry:
+http:
   retries: 3
-  interval: 2
+  interval: 2.0
   exponential: true
 
 auth:

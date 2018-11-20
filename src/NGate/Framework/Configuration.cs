@@ -15,14 +15,14 @@ namespace NGate.Framework
         public ResourceId ResourceId { get; set; }
         public IEnumerable<Module> Modules { get; set; }
         public IDictionary<string, Extension> Extensions { get; set; }
-        public Retry Retry { get; set; }
+        public Http Http { get; set; }
     }
 
-    public class Retry
+    public class Http
     {
         public int Retries { get; set; }
         public bool Exponential { get; set; }
-        public int Interval { get; set; }
+        public double Interval { get; set; }
     }
 
     public class Module
