@@ -1,0 +1,32 @@
+name: Customers
+path: /customers
+
+routes:
+- upstream: /
+  method: GET
+  use: downstream
+  downstream: customers-service/customers
+  claims:
+    role: admin
+    
+- upstream: /{id}
+  method: GET
+  use: downstream
+  downstream: customers-service/customers/{id}
+  claims:
+    role: admin
+    
+- upstream: /
+  method: POST
+  use: dispatcher
+  exchange: customers.create_customer
+  routing_key: create_customer
+  bind:
+  - id:@user_id
+  payload: create_customer
+  schema: create_customer.schema
+  
+services:
+  customers-service:
+    url: localhost:5001
+#    url: localhost:9999/customers-service

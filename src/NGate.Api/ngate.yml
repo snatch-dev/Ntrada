@@ -8,16 +8,16 @@ payloads_folder: Payloads
 resource_id:
   property: id
   generate: true
-  
+
 cors:
   enabled: true
   headers:
-    - X-Operation
-    - X-Resource
-    - X-Total-Count
+  - X-Operation
+  - X-Resource
+  - X-Total-Count
 
 http:
-  retries: 3
+  retries: 2
   interval: 2.0
   exponential: true
 
@@ -34,26 +34,26 @@ auth:
     validate_audience: false
     validate_lifetime: false
   claims:
-      role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
-  policies:
-    admin:
-      claims:
-        role: admin
-    product_manager:
-      claims:
-        role: manager
-        access: create_product
-      
+    role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
+#  policies:
+#    admin:
+#      claims:
+#        role: admin
+#    product_manager:
+#      claims:
+#        role: manager
+#        access: create_product
+
 extensions:
   dispatcher:
     use: rabbitmq
     configuration: rabbitmq.json
-    
+
 modules:
-  - name: home
-    routes:
-    - upstream: /
-      method: GET
-      use: return_value
-      return_value: Welcome to API Gateway
-      auth: false
+- name: home
+  routes:
+  - upstream: /
+    method: GET
+    use: return_value
+    return_value: Welcome to DShop API.
+    auth: false

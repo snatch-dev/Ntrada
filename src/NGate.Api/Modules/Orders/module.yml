@@ -1,14 +1,17 @@
 name: Orders
 path: /orders
+
 routes:
 - upstream: /
   method: GET
   use: downstream
   downstream: orders-service/orders?customerId=@user_id
-- upstream: /{orderId}
+  
+- upstream: /{id:guid}
   method: GET
   use: downstream
-  downstream: orders-service/orders/{orderId}
+  downstream: orders-service/customers/@user_id/orders/{id}
+  
 - upstream: /
   method: POST
   use: dispatcher
@@ -16,22 +19,33 @@ routes:
   routing_key: create_order
   bind:
   - customerId:@user_id
-  transform:
-  - test:nothing
   payload: create_order
   schema: create_order.schema
-- upstream: /sync/{orderId}
-  generate_resource_id: true
+  
+- upstream: /{id:guid}/complete
   method: POST
-  downstream_method: PUT
-  use: downstream
-  downstream: orders-service/orders/{orderId}
+  use: dispatcher
+  exchange: orders.complete_order
+  routing_key: complete_order
   bind:
+  - id:{id}
   - customerId:@user_id
-  transform:
-  - customerId:user
-  payload: create_order
-- upstream: /{id}
+  payload: complete_order
+  schema: complete_order.schema
+  
+- upstream: /{id:guid}/approve
+  method: POST
+  use: dispatcher
+  exchange: orders.approve_order
+  routing_key: approve_order
+  bind:
+  - id:{id}
+  payload: approve_order
+  schema: approve_order.schema
+  claims:
+    role: admin
+    
+- upstream: /{id:guid}
   method: DELETE
   use: dispatcher
   exchange: orders.cancel_order
@@ -40,6 +54,9 @@ routes:
   - id:{id}
   - customerId:@user_id
   payload: cancel_order
+  schema: cancel_order.schema
+
 services:
   orders-service:
-    url: localhost:9999/orders-service
+    url: localhost:5005
+#    url: localhost:9999/orders-service

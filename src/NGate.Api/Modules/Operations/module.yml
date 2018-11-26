@@ -1,0 +1,14 @@
+name: Operations
+path: /operations
+
+routes:
+- upstream: /{id}
+  method: GET
+  use: downstream
+  downstream: operations-service/operations/{id}
+  auth: false
+  
+services:
+  operations-service:
+    url: localhost:5004
+#    url: localhost:9999/operations-service
