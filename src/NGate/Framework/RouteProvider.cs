@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
@@ -10,6 +12,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace NGate.Framework
 {
@@ -242,15 +245,7 @@ namespace NGate.Framework
                     return;
                 }
 
-                var httpResponse = await httpRequest();
-                if (!httpResponse.IsSuccessStatusCode)
-                {
-                    response.StatusCode = (int) httpResponse.StatusCode;
-                    return;
-                }
-
-                var content = await httpResponse.Content.ReadAsStringAsync();
-                await response.WriteAsync(content);
+                await WriteResponseAsync(response, await httpRequest(), executionData);
             };
 
         private async Task<bool> IsPayloadValidAsync(ExecutionData executionData, HttpResponse httpResponse)
@@ -278,7 +273,7 @@ namespace NGate.Framework
 
                 return false;
             }
-            
+
             if (!_accessValidator.IsAuthorized(request.HttpContext.User, routeConfig))
             {
                 response.StatusCode = 403;
@@ -298,6 +293,7 @@ namespace NGate.Framework
                     ? executionData.Route.Method
                     : executionData.Route.DownstreamMethod)
                 .ToLowerInvariant();
+
             switch (method)
             {
                 case "get":
@@ -327,6 +323,83 @@ namespace NGate.Framework
             }
 
             return new StringContent(string.Empty);
+        }
+
+        private static async Task WriteResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
+            ExecutionData executionData)
+        {
+            if (!httpResponse.IsSuccessStatusCode)
+            {
+                SetErrorResponse(response, httpResponse, executionData);
+                return;
+            }
+
+            await SetSuccessResponseAsync(response, httpResponse, executionData);
+        }
+
+        private static void SetErrorResponse(HttpResponse response, HttpResponseMessage httpResponse,
+            ExecutionData executionData)
+        {
+            var onError = executionData.Route.OnError;
+            if (onError == null)
+            {
+                response.StatusCode = (int) httpResponse.StatusCode;
+
+                return;
+            }
+
+            response.StatusCode = onError.Code > 0 ? onError.Code : 400;
+        }
+
+        private static async Task SetSuccessResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
+            ExecutionData executionData)
+        {
+            const string responseDataKey = "response.data";
+            var content = await httpResponse.Content.ReadAsStringAsync();
+            var onSuccess = executionData.Route.OnSuccess;
+            if (onSuccess == null)
+            {
+                await response.WriteAsync(content);
+                return;
+            }
+
+            response.StatusCode = onSuccess.Code > 0 ? onSuccess.Code : 200;
+            if (onSuccess.Data is string dataText && dataText.StartsWith(responseDataKey))
+            {
+                var dataKey = dataText.Replace(responseDataKey, string.Empty);
+                if (string.IsNullOrWhiteSpace(dataKey))
+                {
+                    await response.WriteAsync(content);
+                    return;
+                }
+
+                dataKey = dataKey.Substring(1, dataKey.Length - 1);
+                dynamic data = new ExpandoObject();
+                JsonConvert.PopulateObject(content, data);
+                var dictionary = (IDictionary<string, object>) data;
+                if (!dictionary.TryGetValue(dataKey, out var dataValue))
+                {
+                    return;
+                }
+
+                switch (dataValue)
+                {
+                    case JObject jObject:
+                        await response.WriteAsync(jObject.ToString());
+                        return;
+                    case JArray jArray:
+                        await response.WriteAsync(jArray.ToString());
+                        return;
+                    default:
+                        await response.WriteAsync(dataValue.ToString());
+                        break;
+                }
+            }
+
+            if (onSuccess.Data != null)
+            {
+                await response.WriteAsync(onSuccess.Data.ToString());
+            }
         }
     }
 }

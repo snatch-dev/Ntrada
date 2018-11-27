@@ -6,6 +6,8 @@ routes:
   method: GET
   use: downstream
   downstream: products-service/products
+  on_success: 
+    data: response.data.items
   auth: false
   
 - upstream: /{id}

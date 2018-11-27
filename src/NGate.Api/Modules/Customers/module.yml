@@ -6,6 +6,8 @@ routes:
   method: GET
   use: downstream
   downstream: customers-service/customers
+  on_success:
+    data: response.data.items
   claims:
     role: admin
     

@@ -6,6 +6,8 @@ routes:
   method: GET
   use: downstream
   downstream: orders-service/orders?customerId=@user_id
+  on_success:
+    data: response.data.items
   
 - upstream: /{id:guid}
   method: GET

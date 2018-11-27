@@ -2,7 +2,7 @@
 
 <PropertyGroup>
     <Description>NGate API Gateway.</Description>
-    <VersionPrefix>0.0.2</VersionPrefix>
+    <VersionPrefix>0.0.3</VersionPrefix>
     <Authors>Piotr Gankiewicz</Authors>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>WardNGateen</AssemblyName>
