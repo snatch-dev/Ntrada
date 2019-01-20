@@ -1,0 +1,64 @@
+name: Orders
+path: /orders
+
+routes:
+- upstream: /
+  method: GET
+  use: downstream
+  downstream: orders-service/orders?customerId=@user_id
+  on_success:
+    data: response.data.items
+  
+- upstream: /{id:guid}
+  method: GET
+  use: downstream
+  downstream: orders-service/customers/@user_id/orders/{id}
+  
+- upstream: /
+  method: POST
+  use: dispatcher
+  exchange: orders.create_order
+  routing_key: create_order
+  bind:
+  - customerId:@user_id
+  payload: create_order
+  schema: create_order.schema
+  
+- upstream: /{id:guid}/complete
+  method: POST
+  use: dispatcher
+  exchange: orders.complete_order
+  routing_key: complete_order
+  bind:
+  - id:{id}
+  - customerId:@user_id
+  payload: complete_order
+  schema: complete_order.schema
+  
+- upstream: /{id:guid}/approve
+  method: POST
+  use: dispatcher
+  exchange: orders.approve_order
+  routing_key: approve_order
+  bind:
+  - id:{id}
+  payload: approve_order
+  schema: approve_order.schema
+  claims:
+    role: admin
+    
+- upstream: /{id:guid}
+  method: DELETE
+  use: dispatcher
+  exchange: orders.cancel_order
+  routing_key: cancel_order
+  bind:
+  - id:{id}
+  - customerId:@user_id
+  payload: cancel_order
+  schema: cancel_order.schema
+
+services:
+  orders-service:
+    url: localhost:5005
+#    url: localhost:9999/orders-service
