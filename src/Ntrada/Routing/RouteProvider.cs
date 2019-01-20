@@ -31,16 +31,18 @@ namespace Ntrada.Routing
         private readonly IRequestProcessor _requestProcessor;
         private readonly IRouteConfigurator _routeConfigurator;
         private readonly IAccessValidator _accessValidator;
+        private readonly IExtensionManager _extensionManager;
         private readonly NtradaConfiguration _configuration;
 
         public RouteProvider(IServiceProvider serviceProvider, IRequestProcessor requestProcessor,
-            IRouteConfigurator routeConfigurator, IAccessValidator accessValidator,
+            IRouteConfigurator routeConfigurator, IAccessValidator accessValidator, IExtensionManager extensionManager,
             NtradaConfiguration configuration)
         {
             _serviceProvider = serviceProvider;
             _requestProcessor = requestProcessor;
             _routeConfigurator = routeConfigurator;
             _accessValidator = accessValidator;
+            _extensionManager = extensionManager;
             _configuration = configuration;
             var processors = new Dictionary<string, Func<RouteConfig, Func<HttpRequest, HttpResponse, RouteData, Task>>>
             {
@@ -103,18 +105,7 @@ namespace Ntrada.Routing
                 return extensions;
             }
 
-            var loadedExtensions = new Dictionary<string, IExtension>();
-            foreach (var extensionType in extensionsTypes)
-            {
-                var extension = Activator.CreateInstance(extensionType, _configuration) as IExtension;
-                if (extension == null)
-                {
-                    continue;
-                }
-
-                loadedExtensions[extension.Name] = extension;
-            }
-
+            var loadedExtensions = _extensionManager.GetAll().ToDictionary(e => e.Name, e => e);
             foreach (var extension in _configuration.Extensions)
             {
                 var extensionName = extension.Value.Use;

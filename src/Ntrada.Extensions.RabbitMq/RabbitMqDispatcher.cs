@@ -11,7 +11,7 @@ using RawRabbit.Instantiation;
 
 namespace Ntrada.Extensions.RabbitMq
 {
-    public class RabbitMqDispatcher : IExtension
+    public class RabbitMqDispatcher : IDispatcherExtension
     {
         private readonly NtradaConfiguration _configuration;
         private IBusClient _busClient;

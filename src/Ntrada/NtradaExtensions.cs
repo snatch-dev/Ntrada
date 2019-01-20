@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Ntrada.Auth;
 using Ntrada.Configuration;
+using Ntrada.Extensions;
 using Ntrada.Middleware;
 using Ntrada.Requests;
 using Ntrada.Routing;
@@ -120,6 +121,10 @@ namespace Ntrada
                         .AddJsonFormatters()
                         .AddJsonOptions(o => o.SerializerSettings.Formatting = Formatting.Indented);
 
+                    s.AddLogging();
+                    s.AddSingleton<IExtensionManager, ExtensionManager>();
+                    s.AddSingleton(configuration);
+
                     var httpClientBuilder = s.AddHttpClient("ntrada");
                     httpClientBuilder.AddTransientHttpErrorPolicy(p =>
                         p.WaitAndRetryAsync(http.Retries, retryAttempt =>
@@ -132,7 +137,6 @@ namespace Ntrada
                         }));
 
 
-                    s.AddLogging();
                     if (authenticationConfig == null || !useJwt)
                     {
                         return;
@@ -178,6 +182,9 @@ namespace Ntrada
                 })
                 .Configure(app =>
                 {
+                    var extensionManager = app.ApplicationServices.GetService<IExtensionManager>();
+                    extensionManager.Initialize();
+                    
                     if (useErrorHandler)
                     {
                         app.UseMiddleware<ErrorHandlerMiddleware>();
@@ -212,7 +219,7 @@ namespace Ntrada
 
                     var routeProvider = new RouteProvider(app.ApplicationServices,
                         new RequestProcessor(configuration, new ValueProvider(), new SchemaValidator()),
-                        new RouteConfigurator(configuration), new AccessValidator(configuration),
+                        new RouteConfigurator(configuration), new AccessValidator(configuration), extensionManager,
                         configuration);
 
                     app.UseRouter(routeProvider.Build());

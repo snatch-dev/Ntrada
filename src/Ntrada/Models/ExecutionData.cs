@@ -10,7 +10,7 @@ namespace Ntrada.Models
     public class ExecutionData
     {
         public string RequestId { get; set; }
-        public Configuration.Route Route { get; set; }
+        public Route Route { get; set; }
         public HttpRequest Request { get; set; }
         public HttpResponse Response { get; set; }
         public RouteData Data { get; set; }
