@@ -33,3 +33,157 @@ curl localhost:5000
 
 More advanced scenario can be found under [samples](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api) directory - it's using [modules](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api/Modules), message broker, authentication etc.
 This sample requires [RabbitMQ](https://www.rabbitmq.com) up and running and provides API Gateway for [DShop](https://github.com/devmentors/DNC-DShop) project (a mirror of [DShop.Api](https://github.com/devmentors/DNC-DShop.Api) which is a standalone ASP.NET Core application).
+
+
+----------------
+
+**Basic configuration**
+
+```yml
+modules:
+- name: home
+  routes:
+  - upstream: /
+    method: GET
+    use: return_value
+    return_value: Welcome to Ntrada API.
+```
+
+
+----------------
+
+**Advanced configuration**
+
+```yml
+use_error_handler: true
+use_forwarded_headers: true
+pass_query_string: true
+modules_path: Modules
+settings_path: Settings
+payloads_folder: Payloads
+
+resource_id:
+  property: id
+  generate: true
+
+cors:
+  enabled: true
+  headers:
+  - X-Operation
+  - X-Resource
+  - X-Total-Count
+
+http:
+  retries: 2
+  interval: 2.0
+  exponential: true
+
+auth:
+  type: jwt
+  global: true
+  jwt:
+    key: JLBMU2VbJZmt42sUwByUpJJF6Y5mG2gPNU9sQFUpJFcGFJdyKxskR3bxh527kax2UcXHvB
+    issuer: dshop-identity-service
+    issuers:
+    validate_issuer: true
+    audience:
+    audiences:
+    validate_audience: false
+    validate_lifetime: false
+  claims:
+    role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
+#  policies:
+#    admin:
+#      claims:
+#        role: admin
+#    product_manager:
+#      claims:
+#        role: manager
+#        access: create_product
+
+extensions:
+  dispatcher:
+    use: rabbitmq
+    configuration: rabbitmq.json
+
+modules:
+- name: home
+  routes:
+  - upstream: /
+    method: GET
+    use: return_value
+    return_value: Welcome to DShop API.
+    auth: false
+
+```
+
+----------------
+
+**Additional modules**
+
+```yml
+name: Orders
+path: /orders
+
+routes:
+- upstream: /
+  method: GET
+  use: downstream
+  downstream: orders-service/orders?customerId=@user_id
+  on_success:
+    data: response.data.items
+  
+- upstream: /{id:guid}
+  method: GET
+  use: downstream
+  downstream: orders-service/customers/@user_id/orders/{id}
+  
+- upstream: /
+  method: POST
+  use: dispatcher
+  exchange: orders.create_order
+  routing_key: create_order
+  bind:
+  - customerId:@user_id
+  payload: create_order
+  schema: create_order.schema
+  
+- upstream: /{id:guid}/complete
+  method: POST
+  use: dispatcher
+  exchange: orders.complete_order
+  routing_key: complete_order
+  bind:
+  - id:{id}
+  - customerId:@user_id
+  payload: complete_order
+  schema: complete_order.schema
+  
+- upstream: /{id:guid}/approve
+  method: POST
+  use: dispatcher
+  exchange: orders.approve_order
+  routing_key: approve_order
+  bind:
+  - id:{id}
+  payload: approve_order
+  schema: approve_order.schema
+  claims:
+    role: admin
+    
+- upstream: /{id:guid}
+  method: DELETE
+  use: dispatcher
+  exchange: orders.cancel_order
+  routing_key: cancel_order
+  bind:
+  - id:{id}
+  - customerId:@user_id
+  payload: cancel_order
+  schema: cancel_order.schema
+
+services:
+  orders-service:
+    url: localhost:5005
+#    url: localhost:9999/orders-service
+```
