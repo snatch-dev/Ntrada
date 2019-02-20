@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Ntrada.Extensions
@@ -6,6 +7,6 @@ namespace Ntrada.Extensions
     {
         IEnumerable<IExtension> GetAll();
         T Get<T>(string name) where T : class, IExtension;
-        void Initialize();
+        void Initialize(IEnumerable<Type> registeredExtensions = null);
     }
 }

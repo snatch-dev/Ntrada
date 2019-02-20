@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Ntrada.Auth;
@@ -16,8 +17,6 @@ using Ntrada.Configuration;
 using Ntrada.Extensions;
 using Ntrada.Models;
 using Ntrada.Requests;
-using Module = Ntrada.Configuration.Module;
-using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada.Routing
 {
@@ -33,10 +32,11 @@ namespace Ntrada.Routing
         private readonly IAccessValidator _accessValidator;
         private readonly IExtensionManager _extensionManager;
         private readonly NtradaConfiguration _configuration;
+        private readonly ILogger<RouteProvider> _logger;
 
         public RouteProvider(IServiceProvider serviceProvider, IRequestProcessor requestProcessor,
             IRouteConfigurator routeConfigurator, IAccessValidator accessValidator, IExtensionManager extensionManager,
-            NtradaConfiguration configuration)
+            NtradaConfiguration configuration, ILogger<RouteProvider> logger)
         {
             _serviceProvider = serviceProvider;
             _requestProcessor = requestProcessor;
@@ -44,6 +44,7 @@ namespace Ntrada.Routing
             _accessValidator = accessValidator;
             _extensionManager = extensionManager;
             _configuration = configuration;
+            _logger = logger;
             var processors = new Dictionary<string, Func<RouteConfig, Func<HttpRequest, HttpResponse, RouteData, Task>>>
             {
                 ["return_value"] = UseReturnValueAsync,
@@ -130,18 +131,13 @@ namespace Ntrada.Routing
 
                 foreach (var module in _configuration.Modules.Where(m => m.Enabled != false))
                 {
-                    BuildRoutes(routeBuilder, module);
+                    _logger.LogInformation($"Building routes for module: '{module.Name}'");
+                    foreach (var route in module.Routes)
+                    {
+                        BuildRoutes(routeBuilder, module, route);
+                    }
                 }
             };
-
-
-        private void BuildRoutes(IRouteBuilder routeBuilder, Configuration.Module module)
-        {
-            foreach (var route in module.Routes)
-            {
-                BuildRoutes(routeBuilder, module, route);
-            }
-        }
 
         private void BuildRoutes(IRouteBuilder routeBuilder, Configuration.Module module, Configuration.Route route)
         {
@@ -167,6 +163,26 @@ namespace Ntrada.Routing
                 upstream = "/";
             }
 
+            var routeInfo = string.Empty;
+            switch (route.Use)
+            {
+                case "dispatcher":
+                    routeInfo = $"dispatch a message to exchange: '{route.Exchange}'";
+                    break;
+                case "downstream":
+                    routeInfo = $"call a downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
+                    break;
+                case "return_value":
+                    routeInfo = $"return a value: '{route.ReturnValue}'";
+                    break;
+            }
+
+            var isProtectedInfo = _configuration.Auth is null || !_configuration.Auth.Global && route.Auth is null ||
+                                  route.Auth == false
+                ? "public"
+                : "protected";
+            _logger.LogInformation($"Added {isProtectedInfo} route for upstream: [{route.Method.ToUpperInvariant()}] '{upstream}'" +
+                                   $" -> {routeInfo}");
             route.Upstream = upstream;
             var routeConfig = _routeConfigurator.Configure(module, route);
             _methods[route.Method](routeBuilder, route.Upstream, routeConfig);

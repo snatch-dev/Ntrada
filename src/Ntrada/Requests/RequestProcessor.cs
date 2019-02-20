@@ -13,7 +13,6 @@ using Ntrada.Models;
 using Ntrada.Routing;
 using Ntrada.Schema;
 using Ntrada.Values;
-using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada.Requests
 {

@@ -1,0 +1,7 @@
+modules:
+- name: home
+  routes:
+  - upstream: /
+    method: GET
+    use: return_value
+    return_value: Welcome to Ntrada API.

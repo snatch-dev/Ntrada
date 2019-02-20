@@ -8,9 +8,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Ntrada.Auth;
+using Ntrada.Builders;
 using Ntrada.Configuration;
 using Ntrada.Extensions;
 using Ntrada.Middleware;
@@ -26,8 +28,20 @@ namespace Ntrada
 {
     public static class NtradaExtensions
     {
-        public static IWebHostBuilder UseNtrada(this IWebHostBuilder webHostBuilder, string[] args = null)
+        private static readonly string Logo = @"
+    / | / / /__________ _____/ /___ _
+   /  |/ / __/ ___/ __ `/ __  / __ `/
+  / /|  / /_/ /  / /_/ / /_/ / /_/ / 
+ /_/ |_/\__/_/   \__,_/\__,_/\__,_/ 
+
+
+ /___ API Gateway (Entrance) ___/";
+        
+        public static INtradaBuilder UseNtrada(this IWebHostBuilder webHostBuilder, string[] args = null)
         {
+            var newLine = Environment.NewLine;
+            Console.WriteLine($"{newLine}{newLine}{Logo}{newLine}{newLine}");
+            
             var configPath = args != null && args.Any() ? args[0] : string.Empty;
             var configPathVariable = Environment.GetEnvironmentVariable("NTRADA_CONFIG");
             if (!string.IsNullOrWhiteSpace(configPathVariable))
@@ -114,14 +128,22 @@ namespace Ntrada
                 allModules.AddRange(modules);
                 configuration.Modules = allModules;
             }
+            
+            var ntradaBuilder = new NtradaBuilder(webHostBuilder);
 
-            return webHostBuilder.ConfigureServices(s =>
+             webHostBuilder.ConfigureServices(s =>
                 {
                     s.AddMvcCore()
                         .AddJsonFormatters()
                         .AddJsonOptions(o => o.SerializerSettings.Formatting = Formatting.Indented);
 
-                    s.AddLogging();
+                    s.AddLogging(
+                        builder =>
+                        {
+                            builder.AddFilter("Microsoft", LogLevel.Warning)
+                                .AddFilter("System", LogLevel.Warning)
+                                .AddConsole();
+                        });
                     s.AddSingleton<IExtensionManager, ExtensionManager>();
                     s.AddSingleton(configuration);
 
@@ -183,7 +205,7 @@ namespace Ntrada
                 .Configure(app =>
                 {
                     var extensionManager = app.ApplicationServices.GetService<IExtensionManager>();
-                    extensionManager.Initialize();
+                    extensionManager.Initialize(ntradaBuilder.Extensions);
                     
                     if (useErrorHandler)
                     {
@@ -220,10 +242,12 @@ namespace Ntrada
                     var routeProvider = new RouteProvider(app.ApplicationServices,
                         new RequestProcessor(configuration, new ValueProvider(), new SchemaValidator()),
                         new RouteConfigurator(configuration), new AccessValidator(configuration), extensionManager,
-                        configuration);
+                        configuration, app.ApplicationServices.GetService<ILogger<RouteProvider>>());
 
                     app.UseRouter(routeProvider.Build());
                 });
+
+             return ntradaBuilder;
         }
     }
 }
