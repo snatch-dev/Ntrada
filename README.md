@@ -14,6 +14,16 @@
 The aim of this project is to provide an easily configurable (via YML) and extendable (e.g. RabbitMQ integration) API Gateway, that requires no coding whatsoever and can be started via Docker or as .NET Core application.
 
 No documentation yet, please take a look at the basic [ntrada.yml](https://github.com/Ntrada/Ntrada/blob/master/src/Ntrada.Host/ntrada.yml) configuration.
+
+```yml
+modules:
+- name: home
+  routes:
+  - upstream: /
+    method: GET
+    use: return_value
+    return_value: Welcome to Ntrada API.
+```
   
 Start via Docker:
 
@@ -31,24 +41,22 @@ dotnet run
 curl localhost:5000
 ```
 
-More advanced scenario can be found under [samples](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api) directory - it's using [modules](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api/Modules), message broker, authentication etc.
-This sample requires [RabbitMQ](https://www.rabbitmq.com) up and running and provides API Gateway for [DShop](https://github.com/devmentors/DNC-DShop) project (a mirror of [DShop.Api](https://github.com/devmentors/DNC-DShop.Api) which is a standalone ASP.NET Core application).
+If you're willing to create your own application (instead of running it via Docker), it's all it takes to use Ntrada:
 
-
-----------------
-
-**Basic configuration**
-
-```yml
-modules:
-- name: home
-  routes:
-  - upstream: /
-    method: GET
-    use: return_value
-    return_value: Welcome to Ntrada API.
+```csharp
+public static class Program
+{
+    public static async Task Main(string[] args)
+        => await WebHost.CreateDefaultBuilder(args)
+            .UseNtrada()
+            .UseRabbitMq() // An optional extension
+            .Build()
+            .RunAsync();
+}
 ```
 
+More complex scenario can be found under [samples](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api) directory - it's using [modules](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api/Modules), message broker, authentication etc.
+This sample requires [RabbitMQ](https://www.rabbitmq.com) up and running and provides API Gateway for [DShop](https://github.com/devmentors/DNC-DShop) project (a mirror of [DShop.Api](https://github.com/devmentors/DNC-DShop.Api) which is a standalone ASP.NET Core application).
 
 ----------------
 
