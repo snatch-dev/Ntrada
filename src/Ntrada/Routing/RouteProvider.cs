@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -22,6 +23,7 @@ namespace Ntrada.Routing
 {
     public class RouteProvider
     {
+        private static readonly Regex VariablesRegex = new Regex(@"\{(.*?)\}", RegexOptions.Compiled);
         private static readonly string[] DefaultExtensions = {"downstream", "return_value"};
         private static readonly string[] AvailableExtensions = {"dispatcher"};
         private readonly IDictionary<string, Action<IRouteBuilder, string, RouteConfig>> _methods;
@@ -91,7 +93,7 @@ namespace Ntrada.Routing
 
             var extensions = new Dictionary<string, IExtension>();
 
-            if (_configuration.Extensions == null)
+            if (!_configuration.Extensions.Any())
             {
                 return extensions;
             }
@@ -170,7 +172,8 @@ namespace Ntrada.Routing
                     routeInfo = $"dispatch a message to exchange: '{route.Exchange}'";
                     break;
                 case "downstream":
-                    routeInfo = $"call a downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
+                    routeInfo =
+                        $"call a downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
                     break;
                 case "return_value":
                     routeInfo = $"return a value: '{route.ReturnValue}'";
@@ -181,8 +184,9 @@ namespace Ntrada.Routing
                                   route.Auth == false
                 ? "public"
                 : "protected";
-            _logger.LogInformation($"Added {isProtectedInfo} route for upstream: [{route.Method.ToUpperInvariant()}] '{upstream}'" +
-                                   $" -> {routeInfo}");
+            _logger.LogInformation(
+                $"Added {isProtectedInfo} route for upstream: [{route.Method.ToUpperInvariant()}] '{upstream}'" +
+                $" -> {routeInfo}");
             route.Upstream = upstream;
             var routeConfig = _routeConfigurator.Configure(module, route);
             _methods[route.Method](routeBuilder, route.Upstream, routeConfig);
@@ -235,7 +239,7 @@ namespace Ntrada.Routing
                     return;
                 }
 
-                if (routeConfig.Route.Downstream == null)
+                if (routeConfig.Route.Downstream is null)
                 {
                     return;
                 }
@@ -252,7 +256,7 @@ namespace Ntrada.Routing
                 }
 
                 var httpRequest = GetRequest(executionData);
-                if (httpRequest == null)
+                if (httpRequest is null)
                 {
                     return;
                 }
@@ -306,6 +310,26 @@ namespace Ntrada.Routing
                     : executionData.Route.DownstreamMethod)
                 .ToLowerInvariant();
 
+            var requestHeaders = executionData.Route.RequestHeaders is null ||
+                                   !executionData.Route.RequestHeaders.Any()
+                ? _configuration.RequestHeaders ?? new Dictionary<string, string>()
+                : executionData.Route.RequestHeaders;
+            foreach (var header in requestHeaders)
+            {
+                if (!string.IsNullOrWhiteSpace(header.Value))
+                {
+                    httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value);
+                    continue;
+                }
+
+                if (!executionData.Request.Headers.TryGetValue(header.Key, out var values))
+                {
+                    continue;
+                }
+
+                httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, values.ToArray());
+            }
+
             switch (method)
             {
                 case "get":
@@ -323,7 +347,7 @@ namespace Ntrada.Routing
 
         private static StringContent GetPayload(object data, string contentType)
         {
-            if (data == null || string.IsNullOrWhiteSpace(contentType))
+            if (data is null || string.IsNullOrWhiteSpace(contentType))
             {
                 return new StringContent(string.Empty);
             }
@@ -337,7 +361,7 @@ namespace Ntrada.Routing
             return new StringContent(string.Empty);
         }
 
-        private static async Task WriteResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
+        private async Task WriteResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
             ExecutionData executionData)
         {
             if (!httpResponse.IsSuccessStatusCode)
@@ -349,11 +373,11 @@ namespace Ntrada.Routing
             await SetSuccessResponseAsync(response, httpResponse, executionData);
         }
 
-        private static void SetErrorResponse(HttpResponse response, HttpResponseMessage httpResponse,
+        private void SetErrorResponse(HttpResponse response, HttpResponseMessage httpResponse,
             ExecutionData executionData)
         {
             var onError = executionData.Route.OnError;
-            if (onError == null)
+            if (onError is null)
             {
                 response.StatusCode = (int) httpResponse.StatusCode;
 
@@ -363,19 +387,104 @@ namespace Ntrada.Routing
             response.StatusCode = onError.Code > 0 ? onError.Code : 400;
         }
 
-        private static async Task SetSuccessResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
+        private async Task SetSuccessResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
             ExecutionData executionData)
         {
             const string responseDataKey = "response.data";
             var content = await httpResponse.Content.ReadAsStringAsync();
             var onSuccess = executionData.Route.OnSuccess;
-            if (onSuccess == null)
+            if (_configuration.ForwardStatusCode == false || executionData.Route.ForwardStatusCode == false)
+            {
+                response.StatusCode = 200;
+            }
+            else
+            {
+                response.StatusCode = (int) httpResponse.StatusCode;
+            }
+
+            var responseHeaders = executionData.Route.ResponseHeaders is null ||
+                                   !executionData.Route.ResponseHeaders.Any()
+                ? _configuration.ResponseHeaders ?? new Dictionary<string, string>()
+                : executionData.Route.ResponseHeaders;
+            foreach (var header in responseHeaders)
+            {
+                if (string.IsNullOrWhiteSpace(header.Value))
+                {
+                    continue;
+                }
+
+                if (header.Value.Contains("^"))
+                {
+                    var modifiers = header.Value.Split('^');
+                    var basePart = modifiers[0];
+                    var modifier = modifiers[1];
+                    if (string.IsNullOrWhiteSpace(modifier) || !modifier.StartsWith("response:headers:"))
+                    {
+                        continue;
+                    }
+
+                    var parts = modifier.Split(':');
+                    if (parts.Length != 4)
+                    {
+                        continue;
+                    }
+
+                    var headerName = parts[2];
+                    var value = parts[3];
+                    if (!httpResponse.Headers.TryGetValues(headerName, out var headerValues))
+                    {
+                        continue;
+                    }
+
+                    var headerValue = headerValues?.FirstOrDefault();
+                    if (string.IsNullOrWhiteSpace(headerValue))
+                    {
+                        continue;
+                    }
+
+                    var baseMatches = VariablesRegex.Match(basePart);
+                    var valueMatches = VariablesRegex.Match(value);
+                    if (!baseMatches.Success || !valueMatches.Success || baseMatches.Value != valueMatches.Value)
+                    {
+                        continue;
+                    }
+
+                    var plainValue = value.Replace(valueMatches.Value, string.Empty);
+                    var headerPlainValue = headerValue.Replace(plainValue, string.Empty);
+                    var newHeaderValue = basePart.Replace(baseMatches.Value, headerPlainValue);
+                    if (string.IsNullOrWhiteSpace(newHeaderValue))
+                    {
+                        continue;
+                    }
+                    
+                    response.Headers.Remove(header.Key);
+                    response.Headers.Add(header.Key, newHeaderValue);
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(header.Value) && !header.Value.Contains("^"))
+                {
+                    response.Headers.Remove(header.Key);
+                    response.Headers.Add(header.Key, header.Value);
+                    continue;
+                }
+                
+                if (!httpResponse.Headers.TryGetValues(header.Key, out var values))
+                {
+                    continue;
+                }
+
+                response.Headers.Remove(header.Key);
+                response.Headers.Add(header.Key, values.ToArray());
+            }
+
+            if (onSuccess is null)
             {
                 await response.WriteAsync(content);
                 return;
             }
 
-            response.StatusCode = onSuccess.Code > 0 ? onSuccess.Code : 200;
+            response.StatusCode = onSuccess.Code > 0 ? onSuccess.Code : response.StatusCode;
             if (onSuccess.Data is string dataText && dataText.StartsWith(responseDataKey))
             {
                 var dataKey = dataText.Replace(responseDataKey, string.Empty);

@@ -18,6 +18,9 @@ namespace Ntrada.Configuration
         public string Exchange { get; set; }
         public string RoutingKey { get; set; }
         public bool? Auth { get; set; }
+        public IDictionary<string, string> RequestHeaders { get; set; }
+        public IDictionary<string, string> ResponseHeaders { get; set; }
+        public bool? ForwardStatusCode { get; set; }
         public OnError OnError { get; set; }
         public OnSuccess OnSuccess { get; set; }
         public IDictionary<string, string> Claims { get; set; } = new Dictionary<string, string>();

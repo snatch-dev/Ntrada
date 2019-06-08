@@ -25,7 +25,7 @@ namespace Ntrada.Routing
 
         private IDictionary<string, string> GetClaims(Route route)
         {
-            if (route.Claims == null || !route.Claims.Any() || !_claims.Any())
+            if (route.Claims is null || !route.Claims.Any() || !_claims.Any())
             {
                 return new Dictionary<string, string>();
             }

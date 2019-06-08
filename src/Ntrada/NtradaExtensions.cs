@@ -77,7 +77,7 @@ namespace Ntrada
             var useCors = cors?.Enabled == true;
             var useErrorHandler = configuration.UseErrorHandler == true;
             var http = configuration.Http ?? new Http();
-            if (configuration.SettingsPath == null)
+            if (configuration.SettingsPath is null)
             {
                 configuration.SettingsPath = "Settings";
             }
@@ -88,7 +88,7 @@ namespace Ntrada
                     .Substring(0, configuration.SettingsPath.Length - 1);
             }
 
-            if (configuration.PayloadsFolder == null)
+            if (configuration.PayloadsFolder is null)
             {
                 configuration.PayloadsFolder = "Payloads";
             }
@@ -159,7 +159,7 @@ namespace Ntrada
                         }));
 
 
-                    if (authenticationConfig == null || !useJwt)
+                    if (authenticationConfig is null || !useJwt)
                     {
                         return;
                     }
