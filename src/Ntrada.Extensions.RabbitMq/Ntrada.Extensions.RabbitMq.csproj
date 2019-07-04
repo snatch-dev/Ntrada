@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>Ntrada RabbitMQ Extensions.</Description>
-    <VersionPrefix>1.0.1</VersionPrefix>
+    <VersionPrefix>1.0.4</VersionPrefix>
     <Authors>Piotr Gankiewicz</Authors>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <Title>Ntrada.Extensions.RabbitMq_</Title>

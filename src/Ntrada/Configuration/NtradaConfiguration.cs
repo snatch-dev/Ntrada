@@ -7,6 +7,8 @@ namespace Ntrada.Configuration
     {
         public bool UseErrorHandler { get; set; }
         public bool UseForwardedHeaders { get; set; }
+        public bool? ForwardRequestHeaders { get; set; }
+        public bool? ForwardResponseHeaders { get; set; }
         public IDictionary<string, string> RequestHeaders { get; set; }
         public IDictionary<string, string> ResponseHeaders { get; set; }
         public bool? ForwardStatusCode { get; set; }

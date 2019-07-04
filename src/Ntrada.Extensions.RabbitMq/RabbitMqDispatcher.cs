@@ -26,20 +26,23 @@ namespace Ntrada.Extensions.RabbitMq
         public async Task InitAsync()
         {
             var extension = _configuration.Extensions.Single(e => e.Value.Use == Name).Value;
-            var configurationPath = extension.Configuration;
-            if (!File.Exists(configurationPath))
+            var settings = extension.Settings;
+            if (!File.Exists(settings))
             {
-                configurationPath = $"{_configuration.SettingsPath}/{configurationPath}";
-                if (!File.Exists(configurationPath))
+                settings = $"{_configuration.SettingsPath}/{settings}.json";
+                if (!File.Exists(settings))
                 {
                     throw new Exception($"Configuration for an extension: '{Name}'," +
-                                        $"was not found under: '{configurationPath}'.");
+                                        $"was not found under: '{settings}.json'.");
                 }
             }
 
+            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.ToLowerInvariant();
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile(configurationPath);
+                .AddJsonFile(settings)
+                .AddJsonFile($"{settings}.{environment}.json", optional: true)
+                .AddEnvironmentVariables();;
 
             var options = new RabbitMqOptions();
             builder.Build().Bind(options);

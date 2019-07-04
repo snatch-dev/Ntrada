@@ -26,6 +26,7 @@ namespace Ntrada.Routing
         private static readonly Regex VariablesRegex = new Regex(@"\{(.*?)\}", RegexOptions.Compiled);
         private static readonly string[] DefaultExtensions = {"downstream", "return_value"};
         private static readonly string[] AvailableExtensions = {"dispatcher"};
+        private static readonly string[] ExcludedResponseHeaders = {"transfer-encoding", "content-length"};
         private readonly IDictionary<string, Action<IRouteBuilder, string, RouteConfig>> _methods;
         private readonly IDictionary<string, IExtension> _extensions;
         private readonly IServiceProvider _serviceProvider;
@@ -212,7 +213,9 @@ namespace Ntrada.Routing
                     return;
                 }
 
+                
                 var dispatcher = _extensions[name];
+                _logger.LogInformation($"Dispatching a message: {routeConfig.Route.RoutingKey} to the exchange: {routeConfig.Route.Exchange}");
                 await dispatcher.ExecuteAsync(executionData);
                 response.Headers.Add("X-Operation", executionData.RequestId);
                 response.Headers.Add("X-Resource", executionData.ResourceId);
@@ -255,13 +258,16 @@ namespace Ntrada.Routing
                     return;
                 }
 
-                var httpRequest = GetRequest(executionData);
-                if (httpRequest is null)
+                var requestId = Guid.NewGuid().ToString("N");
+                _logger.LogInformation($"Sending HTTP {routeConfig.Route.Method} request to: {routeConfig.Downstream} [ID: {requestId}]");
+                var httpResponse = GetRequestAsync(executionData);
+                _logger.LogInformation($"Received response to HTTP {routeConfig.Route.Method} request from: {routeConfig.Downstream} [ID: {requestId}]");
+                if (httpResponse is null)
                 {
                     return;
                 }
 
-                await WriteResponseAsync(response, await httpRequest(), executionData);
+                await WriteResponseAsync(response, await httpResponse(), executionData);
             };
 
         private async Task<bool> IsPayloadValidAsync(ExecutionData executionData, HttpResponse httpResponse)
@@ -300,7 +306,7 @@ namespace Ntrada.Routing
             return true;
         }
 
-        private Func<Task<HttpResponseMessage>> GetRequest(ExecutionData executionData)
+        private Func<Task<HttpResponseMessage>> GetRequestAsync(ExecutionData executionData)
         {
             var url = executionData.Downstream;
             var httpClient = _serviceProvider.GetService<IHttpClientFactory>().CreateClient("ntrada");
@@ -309,6 +315,16 @@ namespace Ntrada.Routing
                     ? executionData.Route.Method
                     : executionData.Route.DownstreamMethod)
                 .ToLowerInvariant();
+
+
+            if (executionData.Route.ForwardRequestHeaders == true ||
+                (_configuration.ForwardRequestHeaders == true && executionData.Route.ForwardRequestHeaders != false))
+            {
+                foreach (var header in executionData.Request.Headers)
+                {
+                    httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value.ToArray());
+                }
+            }
 
             var requestHeaders = executionData.Route.RequestHeaders is null ||
                                    !executionData.Route.RequestHeaders.Any()
@@ -329,6 +345,7 @@ namespace Ntrada.Routing
 
                 httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, values.ToArray());
             }
+
 
             switch (method)
             {
@@ -366,25 +383,27 @@ namespace Ntrada.Routing
         {
             if (!httpResponse.IsSuccessStatusCode)
             {
-                SetErrorResponse(response, httpResponse, executionData);
+                await SetErrorResponseAsync(response, httpResponse, executionData);
                 return;
             }
 
             await SetSuccessResponseAsync(response, httpResponse, executionData);
         }
 
-        private void SetErrorResponse(HttpResponse response, HttpResponseMessage httpResponse,
+        private async Task SetErrorResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
             ExecutionData executionData)
         {
             var onError = executionData.Route.OnError;
+            var content = await httpResponse.Content.ReadAsStringAsync();
             if (onError is null)
             {
                 response.StatusCode = (int) httpResponse.StatusCode;
-
+                await response.WriteAsync(content);
                 return;
             }
 
             response.StatusCode = onError.Code > 0 ? onError.Code : 400;
+            await response.WriteAsync(content);
         }
 
         private async Task SetSuccessResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
@@ -400,6 +419,25 @@ namespace Ntrada.Routing
             else
             {
                 response.StatusCode = (int) httpResponse.StatusCode;
+            }
+
+            if (executionData.Route.ForwardResponseHeaders == true ||
+                (_configuration.ForwardResponseHeaders == true && executionData.Route.ForwardResponseHeaders != false))
+            {
+                foreach (var header in httpResponse.Headers)
+                {
+                    if (ExcludedResponseHeaders.Contains(header.Key.ToLowerInvariant()))
+                    {
+                        continue;
+                    }
+                    
+                    if (response.Headers.ContainsKey(header.Key))
+                    {
+                        continue;
+                    }
+
+                    response.Headers.Add(header.Key, header.Value.ToArray());
+                }
             }
 
             var responseHeaders = executionData.Route.ResponseHeaders is null ||
@@ -480,11 +518,20 @@ namespace Ntrada.Routing
 
             if (onSuccess is null)
             {
-                await response.WriteAsync(content);
+                if (response.StatusCode != 204)
+                {
+                    await response.WriteAsync(content);
+                }
+                
                 return;
             }
-
+            
             response.StatusCode = onSuccess.Code > 0 ? onSuccess.Code : response.StatusCode;
+            if (response.StatusCode == 204)
+            {
+                return;
+            }
+            
             if (onSuccess.Data is string dataText && dataText.StartsWith(responseDataKey))
             {
                 var dataKey = dataText.Replace(responseDataKey, string.Empty);
@@ -517,7 +564,7 @@ namespace Ntrada.Routing
                 }
             }
 
-            if (onSuccess.Data != null)
+            if (!(onSuccess.Data is null))
             {
                 await response.WriteAsync(onSuccess.Data.ToString());
             }
