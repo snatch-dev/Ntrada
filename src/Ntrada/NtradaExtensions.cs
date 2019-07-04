@@ -37,12 +37,11 @@ namespace Ntrada
 
  /___ API Gateway (Entrance) ___/";
         
-        public static INtradaBuilder UseNtrada(this IWebHostBuilder webHostBuilder, string[] args = null)
+        public static INtradaBuilder UseNtrada(this IWebHostBuilder webHostBuilder, string configPath = "ntrada.yml")
         {
             var newLine = Environment.NewLine;
             Console.WriteLine($"{newLine}{newLine}{Logo}{newLine}{newLine}");
             
-            var configPath = args != null && args.Any() ? args[0] : string.Empty;
             var configPathVariable = Environment.GetEnvironmentVariable("NTRADA_CONFIG");
             if (!string.IsNullOrWhiteSpace(configPathVariable))
             {

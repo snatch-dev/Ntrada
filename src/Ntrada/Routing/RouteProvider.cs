@@ -185,8 +185,7 @@ namespace Ntrada.Routing
                                   route.Auth == false
                 ? "public"
                 : "protected";
-            _logger.LogInformation(
-                $"Added {isProtectedInfo} route for upstream: [{route.Method.ToUpperInvariant()}] '{upstream}'" +
+            _logger.LogInformation($"Added {isProtectedInfo} route for upstream: [{route.Method.ToUpperInvariant()}] '{upstream}'" +
                 $" -> {routeInfo}");
             route.Upstream = upstream;
             var routeConfig = _routeConfigurator.Configure(module, route);
@@ -213,12 +212,12 @@ namespace Ntrada.Routing
                     return;
                 }
 
-                
                 var dispatcher = _extensions[name];
-                _logger.LogInformation($"Dispatching a message: {routeConfig.Route.RoutingKey} to the exchange: {routeConfig.Route.Exchange}");
+                var traceId = request.HttpContext.TraceIdentifier;
+                _logger.LogInformation($"Dispatching a message: {routeConfig.Route.RoutingKey} to the exchange: {routeConfig.Route.Exchange} [Trace ID: {traceId}]");
                 await dispatcher.ExecuteAsync(executionData);
-                response.Headers.Add("X-Operation", executionData.RequestId);
-                response.Headers.Add("X-Resource", executionData.ResourceId);
+                response.Headers.Add("Operation", executionData.RequestId);
+                response.Headers.Add("Resource", executionData.ResourceId);
                 response.StatusCode = 202;
             };
 
@@ -258,10 +257,9 @@ namespace Ntrada.Routing
                     return;
                 }
 
-                var requestId = Guid.NewGuid().ToString("N");
-                _logger.LogInformation($"Sending HTTP {routeConfig.Route.Method} request to: {routeConfig.Downstream} [ID: {requestId}]");
+                var method = routeConfig.Route.Method.ToUpperInvariant();
+                _logger.LogInformation($"Sending HTTP {method} request to: {routeConfig.Downstream} [Trace ID: {request.HttpContext.TraceIdentifier}]");
                 var httpResponse = GetRequestAsync(executionData);
-                _logger.LogInformation($"Received response to HTTP {routeConfig.Route.Method} request from: {routeConfig.Downstream} [ID: {requestId}]");
                 if (httpResponse is null)
                 {
                     return;
@@ -270,7 +268,7 @@ namespace Ntrada.Routing
                 await WriteResponseAsync(response, await httpResponse(), executionData);
             };
 
-        private async Task<bool> IsPayloadValidAsync(ExecutionData executionData, HttpResponse httpResponse)
+        private static async Task<bool> IsPayloadValidAsync(ExecutionData executionData, HttpResponse httpResponse)
         {
             if (executionData.IsPayloadValid)
             {
@@ -288,9 +286,11 @@ namespace Ntrada.Routing
         private async Task<bool> CanExecuteAsync(HttpRequest request, HttpResponse response,
             RouteData data, RouteConfig routeConfig)
         {
+            var traceId = request.HttpContext.TraceIdentifier;
             var isAuthenticated = await _accessValidator.IsAuthenticatedAsync(request, routeConfig);
             if (!isAuthenticated)
             {
+                _logger.LogWarning($"Unauthorized request to: {routeConfig.Route.Upstream} [Trace ID: {traceId}]");
                 response.StatusCode = 401;
 
                 return false;
@@ -298,6 +298,7 @@ namespace Ntrada.Routing
 
             if (!_accessValidator.IsAuthorized(request.HttpContext.User, routeConfig))
             {
+                _logger.LogWarning($"Forbidden request to: {routeConfig.Route.Upstream} by user: {request.HttpContext.User.Identity.Name} [Trace ID: {traceId}]");
                 response.StatusCode = 403;
 
                 return false;
@@ -381,12 +382,16 @@ namespace Ntrada.Routing
         private async Task WriteResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
             ExecutionData executionData)
         {
+            var traceId = executionData.Request.HttpContext.TraceIdentifier;
+            var method = executionData.Route.Method.ToUpperInvariant();
             if (!httpResponse.IsSuccessStatusCode)
             {
+                _logger.LogInformation($"Received an invalid response ({httpResponse.StatusCode}) to HTTP {method} request from: {executionData.Route.Downstream} [Trace ID: {traceId}]");
                 await SetErrorResponseAsync(response, httpResponse, executionData);
                 return;
             }
 
+            _logger.LogInformation($"Received the successful response ({httpResponse.StatusCode}) to HTTP {method} request from: {executionData.Route.Downstream} [Trace ID: {traceId}]");
             await SetSuccessResponseAsync(response, httpResponse, executionData);
         }
 
