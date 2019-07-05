@@ -371,10 +371,9 @@ namespace Ntrada.Routing
                 return new StringContent(string.Empty);
             }
 
-            switch (contentType)
+            if (contentType.StartsWith("application/json"))
             {
-                case "application/json":
-                    return new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
+                return new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
             }
 
             return new StringContent(string.Empty);

@@ -12,9 +12,9 @@ resource_id:
 cors:
   enabled: true
   headers:
-  - Operation-ID
-  - Resource-ID
   - Request-ID
+  - Resource-ID
+  - Trace-ID
   - Total-Count
 
 http:
@@ -56,5 +56,5 @@ modules:
   - upstream: /
     method: GET
     use: return_value
-    return_value: Welcome to DShop API.
+    return_value: Welcome to DShop API!
     auth: false
