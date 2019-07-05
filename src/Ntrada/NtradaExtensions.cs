@@ -174,11 +174,12 @@ namespace Ntrada
                         {
                             var headers = cors?.Headers ?? Enumerable.Empty<string>();
                             options.AddPolicy("CorsPolicy", builder =>
+                            {
                                 builder.AllowAnyOrigin()
                                     .AllowAnyMethod()
                                     .AllowAnyHeader()
-                                    .AllowCredentials()
-                                    .WithExposedHeaders(headers.ToArray()));
+                                    .WithExposedHeaders(headers.ToArray());
+                            });
                         });
                     }
 

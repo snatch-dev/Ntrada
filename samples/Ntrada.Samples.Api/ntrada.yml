@@ -12,9 +12,10 @@ resource_id:
 cors:
   enabled: true
   headers:
-  - X-Operation
-  - X-Resource
-  - X-Total-Count
+  - Operation-ID
+  - Resource-ID
+  - Request-ID
+  - Total-Count
 
 http:
   retries: 2

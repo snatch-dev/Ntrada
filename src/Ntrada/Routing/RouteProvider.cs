@@ -216,8 +216,9 @@ namespace Ntrada.Routing
                 var traceId = request.HttpContext.TraceIdentifier;
                 _logger.LogInformation($"Dispatching a message: {routeConfig.Route.RoutingKey} to the exchange: {routeConfig.Route.Exchange} [Trace ID: {traceId}]");
                 await dispatcher.ExecuteAsync(executionData);
-                response.Headers.Add("Operation", executionData.RequestId);
-                response.Headers.Add("Resource", executionData.ResourceId);
+                response.Headers.Add("Request-ID", executionData.RequestId);
+                response.Headers.Add("Resource-ID", executionData.ResourceId);
+                response.Headers.Add("Trace-ID", executionData.Request.HttpContext.TraceIdentifier);
                 response.StatusCode = 202;
             };
 
