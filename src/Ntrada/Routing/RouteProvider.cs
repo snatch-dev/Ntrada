@@ -371,7 +371,7 @@ namespace Ntrada.Routing
                 return new StringContent(string.Empty);
             }
 
-            switch (contentType.ToLowerInvariant())
+            switch (contentType)
             {
                 case "application/json":
                     return new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
@@ -385,6 +385,7 @@ namespace Ntrada.Routing
         {
             var traceId = executionData.Request.HttpContext.TraceIdentifier;
             var method = executionData.Route.Method.ToUpperInvariant();
+            response.Headers.Add("Trace-ID", executionData.Request.HttpContext.TraceIdentifier);
             if (!httpResponse.IsSuccessStatusCode)
             {
                 _logger.LogInformation($"Received an invalid response ({httpResponse.StatusCode}) to HTTP {method} request from: {executionData.Route.Downstream} [Trace ID: {traceId}]");

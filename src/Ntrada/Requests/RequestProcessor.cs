@@ -36,6 +36,12 @@ namespace Ntrada.Requests
             HttpRequest request, HttpResponse response, RouteData data)
         {
             request.Headers.TryGetValue("content-type", out var contentType);
+            var contentTypeValue = contentType.ToString().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(contentTypeValue) || contentTypeValue.Contains("text/plain"))
+            {
+                contentTypeValue = "application/json";
+            }
+
             var requestId = Guid.NewGuid().ToString();
             var resourceId = Guid.NewGuid().ToString();
             var executionData = new ExecutionData
@@ -49,8 +55,7 @@ namespace Ntrada.Requests
                 Downstream = GetDownstream(routeConfig, request, data),
                 Payload = await GetPayloadAsync(resourceId, routeConfig.Route, request, data),
                 UserId = _valueProvider.Get("@user_id", request, data),
-                ContentType = contentType,
-
+                ContentType = contentTypeValue
             };
             if (_messages.TryGetValue(GetMessagesKey(routeConfig.Route), out var dataAndSchema))
             {
