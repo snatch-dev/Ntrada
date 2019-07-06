@@ -113,7 +113,7 @@ namespace Ntrada.Requests
                     resourceIdProperty = "id";
                 }
 
-                commandValues.Add(resourceIdProperty, resourceId);
+                commandValues[resourceIdProperty] = resourceId;
             }
 
             foreach (var setter in route.Bind ?? Enumerable.Empty<string>())
