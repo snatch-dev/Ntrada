@@ -401,6 +401,11 @@ namespace Ntrada.Routing
         {
             var onError = executionData.Route.OnError;
             var content = await httpResponse.Content.ReadAsStringAsync();
+            if (!response.Headers.ContainsKey("content-type"))
+            {
+                response.Headers["Content-Type"] = "application/json";
+            }
+
             if (onError is null)
             {
                 response.StatusCode = (int) httpResponse.StatusCode;
@@ -520,6 +525,11 @@ namespace Ntrada.Routing
 
                 response.Headers.Remove(header.Key);
                 response.Headers.Add(header.Key, values.ToArray());
+            }
+
+            if (!response.Headers.ContainsKey("content-type"))
+            {
+                response.Headers["Content-Type"] = "application/json";
             }
 
             if (onSuccess is null)
