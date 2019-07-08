@@ -42,8 +42,8 @@ namespace Ntrada.Requests
                 contentTypeValue = "application/json";
             }
 
-            var requestId = Guid.NewGuid().ToString();
-            var resourceId = Guid.NewGuid().ToString();
+            var requestId = Guid.NewGuid().ToString("N");
+            var resourceId = Guid.NewGuid().ToString("N");
             var executionData = new ExecutionData
             {
                 RequestId = requestId,

@@ -217,7 +217,11 @@ namespace Ntrada.Routing
                 _logger.LogInformation($"Dispatching a message: {routeConfig.Route.RoutingKey} to the exchange: {routeConfig.Route.Exchange} [Trace ID: {traceId}]");
                 await dispatcher.ExecuteAsync(executionData);
                 response.Headers.Add("Request-ID", executionData.RequestId);
-                response.Headers.Add("Resource-ID", executionData.ResourceId);
+                if (executionData.Route.Method == "post")
+                {
+                    response.Headers.Add("Resource-ID", executionData.ResourceId);
+                }
+                
                 response.Headers.Add("Trace-ID", executionData.Request.HttpContext.TraceIdentifier);
                 response.StatusCode = 202;
             };
@@ -232,7 +236,6 @@ namespace Ntrada.Routing
 
                 await response.WriteAsync(routeConfig.Route.ReturnValue);
             };
-
 
         private Func<HttpRequest, HttpResponse, RouteData, Task> UseDownstreamAsync(RouteConfig routeConfig)
             => async (request, response, data) =>
@@ -384,6 +387,12 @@ namespace Ntrada.Routing
         {
             var traceId = executionData.Request.HttpContext.TraceIdentifier;
             var method = executionData.Route.Method.ToUpperInvariant();
+            response.Headers.Add("Request-ID", executionData.RequestId);
+            if (executionData.Route.Method == "post")
+            {
+                response.Headers.Add("Resource-ID", executionData.ResourceId);
+            }
+            
             response.Headers.Add("Trace-ID", executionData.Request.HttpContext.TraceIdentifier);
             if (!httpResponse.IsSuccessStatusCode)
             {
