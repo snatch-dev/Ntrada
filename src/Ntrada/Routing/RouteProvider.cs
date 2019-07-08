@@ -536,7 +536,7 @@ namespace Ntrada.Routing
                 response.Headers.Add(header.Key, values.ToArray());
             }
 
-            if (!response.Headers.ContainsKey("content-type"))
+            if (executionData.Route.Method == "get" && !response.Headers.ContainsKey("content-type"))
             {
                 response.Headers["Content-Type"] = "application/json";
             }
