@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Description>Ntrada API Gateway.</Description>
-    <VersionPrefix>1.0.9</VersionPrefix>
+    <VersionPrefix>1.1.0</VersionPrefix>
     <Authors>Piotr Gankiewicz</Authors>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <Title>Ntrada_</Title>
