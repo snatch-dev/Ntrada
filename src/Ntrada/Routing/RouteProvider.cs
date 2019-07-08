@@ -410,7 +410,7 @@ namespace Ntrada.Routing
         {
             var onError = executionData.Route.OnError;
             var content = await httpResponse.Content.ReadAsStringAsync();
-            if (!response.Headers.ContainsKey("content-type"))
+            if (executionData.Route.Method == "get" && !response.Headers.ContainsKey("content-type"))
             {
                 response.Headers["Content-Type"] = "application/json";
             }
