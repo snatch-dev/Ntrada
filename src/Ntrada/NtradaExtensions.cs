@@ -15,6 +15,7 @@ using Ntrada.Auth;
 using Ntrada.Builders;
 using Ntrada.Configuration;
 using Ntrada.Extensions;
+using Ntrada.Extensions.Tracing;
 using Ntrada.Middleware;
 using Ntrada.Requests;
 using Ntrada.Routing;
@@ -143,6 +144,7 @@ namespace Ntrada
                                 .AddFilter("System", LogLevel.Warning)
                                 .AddConsole();
                         });
+                    s.AddJaeger();
                     s.AddSingleton<IExtensionManager, ExtensionManager>();
                     s.AddSingleton(configuration);
 

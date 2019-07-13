@@ -3,8 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Ntrada.Configuration;
 using Ntrada.Models;
+using OpenTracing;
 using RawRabbit;
 using RawRabbit.Enrichers.MessageContext;
 using RawRabbit.Instantiation;
@@ -13,40 +15,23 @@ namespace Ntrada.Extensions.RabbitMq
 {
     public class RabbitMqDispatcher : IDispatcherExtension
     {
+        private readonly IServiceProvider _serviceProvider;
         private readonly NtradaConfiguration _configuration;
         private IBusClient _busClient;
 
         public string Name => "rabbitmq";
 
-        public RabbitMqDispatcher(NtradaConfiguration configuration)
+        public RabbitMqDispatcher(IServiceProvider serviceProvider)
         {
-            _configuration = configuration;
+            _serviceProvider = serviceProvider;
+            _configuration = _serviceProvider.GetService<NtradaConfiguration>();
         }
 
         public async Task InitAsync()
         {
-            var extension = _configuration.Extensions.Single(e => e.Value.Use == Name).Value;
-            var settings = extension.Settings;
-            if (!File.Exists(settings))
-            {
-                settings = $"{_configuration.SettingsPath}/{settings}.json";
-                if (!File.Exists(settings))
-                {
-                    throw new Exception($"Configuration for an extension: '{Name}'," +
-                                        $"was not found under: '{settings}.json'.");
-                }
-            }
-
-            var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")?.ToLowerInvariant();
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile(settings)
-                .AddJsonFile($"{settings}.{environment}.json", optional: true)
-                .AddEnvironmentVariables();;
-
+            var configuration = _serviceProvider.GetService<IConfiguration>();
             var options = new RabbitMqOptions();
-            builder.Build().Bind(options);
-
+            configuration.GetSection("rabbitMq").Bind(options);
             _busClient = RawRabbitFactory.CreateInstanceFactory(new RawRabbitOptions
             {
                 DependencyInjection = ioc => { ioc.AddSingleton(options); },
@@ -62,6 +47,7 @@ namespace Ntrada.Extensions.RabbitMq
 
         public async Task ExecuteAsync(ExecutionData executionData)
         {
+            var tracer = _serviceProvider.GetService<ITracer>();
             var message = executionData.Payload;
             var route = executionData.Route;
             var context = new CorrelationContext
@@ -72,7 +58,8 @@ namespace Ntrada.Extensions.RabbitMq
                 UserId = executionData.UserId,
                 ConnectionId = executionData.Request.HttpContext.Connection.Id,
                 CreatedAt = DateTime.UtcNow,
-                TraceId = executionData.Request.HttpContext.TraceIdentifier
+                TraceId = executionData.Request.HttpContext.TraceIdentifier,
+                SpanContext = tracer.ActiveSpan.Context.ToString()
             };
             await _busClient.PublishAsync(message, ctx => ctx.UseMessageContext(context)
                 .UsePublishConfiguration(c =>

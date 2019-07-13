@@ -13,11 +13,14 @@ namespace Ntrada.Extensions
         private static readonly string ExtensionsDirectory = "extensions";
         private ISet<IExtension> _extensions = new HashSet<IExtension>();
         private readonly NtradaConfiguration _configuration;
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
 
-        public ExtensionManager(NtradaConfiguration configuration, ILogger<ExtensionManager> logger)
+        public ExtensionManager(NtradaConfiguration configuration, IServiceProvider serviceProvider,
+            ILogger<ExtensionManager> logger)
         {
             _configuration = configuration;
+            _serviceProvider = serviceProvider;
             _logger = logger;
         }
 
@@ -42,7 +45,7 @@ namespace Ntrada.Extensions
             var activatedExtensions = new List<IExtension>();
 
             activatedExtensions.AddRange(allExtensions.Select(type =>
-                Activator.CreateInstance(type, _configuration) as IExtension));
+                Activator.CreateInstance(type, _serviceProvider) as IExtension));
 
             var emptyExtensionsNames = _extensions.Where(e => string.IsNullOrWhiteSpace(e.Name)).ToList();
             if (emptyExtensionsNames.Any())

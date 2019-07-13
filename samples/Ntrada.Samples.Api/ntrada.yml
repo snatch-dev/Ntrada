@@ -2,7 +2,6 @@ use_error_handler: true
 use_forwarded_headers: true
 pass_query_string: true
 modules_path: Modules
-settings_path: Settings
 payloads_folder: Payloads
 
 resource_id:
