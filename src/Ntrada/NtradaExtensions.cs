@@ -75,7 +75,8 @@ namespace Ntrada
             var useForwardedHeaders = configuration.UseForwardedHeaders;
             var cors = configuration?.Cors;
             var useCors = cors?.Enabled == true;
-            var useErrorHandler = configuration.UseErrorHandler == true;
+            var useErrorHandler = configuration.UseErrorHandler;
+            var useJaeger = configuration.UseJaeger;
             var http = configuration.Http ?? new Http();
             if (configuration.SettingsPath is null)
             {
@@ -212,6 +213,11 @@ namespace Ntrada
                     if (useErrorHandler)
                     {
                         app.UseMiddleware<ErrorHandlerMiddleware>();
+                    }
+
+                    if (useJaeger)
+                    {
+                        app.UseJaeger();
                     }
 
                     if (useCors)

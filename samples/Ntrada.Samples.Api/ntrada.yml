@@ -1,5 +1,6 @@
 use_error_handler: true
 use_forwarded_headers: true
+use_jaeger: false
 pass_query_string: true
 modules_path: Modules
 payloads_folder: Payloads

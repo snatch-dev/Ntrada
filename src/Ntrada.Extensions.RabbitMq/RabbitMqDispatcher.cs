@@ -47,7 +47,13 @@ namespace Ntrada.Extensions.RabbitMq
 
         public async Task ExecuteAsync(ExecutionData executionData)
         {
-            var tracer = _serviceProvider.GetService<ITracer>();
+            var spanContext = string.Empty;
+            if (_configuration.UseJaeger)
+            {
+                var tracer = _serviceProvider.GetService<ITracer>();
+                spanContext = tracer is null ? string.Empty : tracer.ActiveSpan.Context.ToString();
+            }
+
             var message = executionData.Payload;
             var route = executionData.Route;
             var context = new CorrelationContext
@@ -59,7 +65,7 @@ namespace Ntrada.Extensions.RabbitMq
                 ConnectionId = executionData.Request.HttpContext.Connection.Id,
                 CreatedAt = DateTime.UtcNow,
                 TraceId = executionData.Request.HttpContext.TraceIdentifier,
-                SpanContext = tracer.ActiveSpan.Context.ToString()
+                SpanContext = spanContext
             };
             await _busClient.PublishAsync(message, ctx => ctx.UseMessageContext(context)
                 .UsePublishConfiguration(c =>

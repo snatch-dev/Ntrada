@@ -6,6 +6,7 @@ namespace Ntrada.Configuration
     public class NtradaConfiguration
     {
         public bool UseErrorHandler { get; set; }
+        public bool UseJaeger { get; set; }
         public bool UseForwardedHeaders { get; set; }
         public bool? ForwardRequestHeaders { get; set; }
         public bool? ForwardResponseHeaders { get; set; }

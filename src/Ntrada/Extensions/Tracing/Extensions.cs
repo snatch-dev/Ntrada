@@ -2,6 +2,7 @@ using Jaeger;
 using Jaeger.Reporters;
 using Jaeger.Samplers;
 using Jaeger.Senders;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -36,16 +37,15 @@ namespace Ntrada.Extensions.Tracing
             {
                 var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
 
-                var reporter = new RemoteReporter
-                        .Builder()
+                var reporter = new RemoteReporter.Builder()
                     .WithSender(new UdpSender(options.UdpHost, options.UdpPort, options.MaxPacketSize))
                     .WithLoggerFactory(loggerFactory)
                     .Build();
 
                 var sampler = GetSampler(options);
 
-                var tracer = new Tracer
-                        .Builder(options.ServiceName)
+                var tracer = new Tracer.Builder(options.ServiceName)
+                    .WithLoggerFactory(loggerFactory)
                     .WithReporter(reporter)
                     .WithSampler(sampler)
                     .Build();
@@ -56,6 +56,17 @@ namespace Ntrada.Extensions.Tracing
             });
 
             return services;
+        }
+        
+        public static IApplicationBuilder UseJaeger(this IApplicationBuilder app)
+        {
+            JaegerOptions options;
+            using (var scope = app.ApplicationServices.CreateScope())
+            {
+                options = scope.ServiceProvider.GetService<JaegerOptions>();
+            }
+
+            return options.Enabled ? app.UseMiddleware<JaegerHttpMiddleware>() : app;
         }
 
         private static ISampler GetSampler(JaegerOptions options)
