@@ -8,6 +8,7 @@ using Ntrada.Configuration;
 using Ntrada.Models;
 using OpenTracing;
 using RawRabbit;
+using RawRabbit.Configuration;
 using RawRabbit.Enrichers.MessageContext;
 using RawRabbit.Instantiation;
 
@@ -34,7 +35,11 @@ namespace Ntrada.Extensions.RabbitMq
             configuration.GetSection("rabbitMq").Bind(options);
             _busClient = RawRabbitFactory.CreateInstanceFactory(new RawRabbitOptions
             {
-                DependencyInjection = ioc => { ioc.AddSingleton(options); },
+                DependencyInjection = ioc =>
+                {
+                    ioc.AddSingleton(options);
+                    ioc.AddSingleton<RawRabbitConfiguration>(options);
+                },
                 Plugins = p => p
                     .UseAttributeRouting()
                     .UseRetryLater()
