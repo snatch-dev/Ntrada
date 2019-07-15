@@ -23,5 +23,7 @@ namespace Ntrada.Configuration
         public IEnumerable<Module> Modules { get; set; } = Enumerable.Empty<Module>();
         public IDictionary<string, Extension> Extensions { get; set; } = new Dictionary<string, Extension>();
         public Http Http { get; set; }
+        public LoadBalancer LoadBalancer { get; set; }
+        public bool UseLocalUrl { get; set; }
     }
 }

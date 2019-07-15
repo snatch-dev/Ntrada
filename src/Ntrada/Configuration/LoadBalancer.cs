@@ -1,8 +1,8 @@
 namespace Ntrada.Configuration
 {
-    public class Service
+    public class LoadBalancer
     {
-        public string LocalUrl { get; set; }
+        public bool Enabled { get; set; }
         public string Url { get; set; }
     }
 }

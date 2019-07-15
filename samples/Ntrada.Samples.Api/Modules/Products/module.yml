@@ -52,5 +52,5 @@ routes:
 
 services:
   products-service:
-    url: localhost:5006
-#    url: localhost:9999/products-service
+    local_url: localhost:5006
+    url: load_balancer/products-service

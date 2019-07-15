@@ -40,5 +40,5 @@ routes:
   
 services:
   customers-service:
-    url: localhost:5001
-#    url: localhost:9999/customers-service
+    local_url: localhost:5001
+    url: load_balancer/customers-service
