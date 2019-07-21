@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
-using Ntrada.Models;
 
-namespace Ntrada.Extensions
+namespace Ntrada
 {
     public interface IExtension
     {

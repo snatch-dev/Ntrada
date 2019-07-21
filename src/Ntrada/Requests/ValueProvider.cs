@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Ntrada.Values
+namespace Ntrada.Requests
 {
     public class ValueProvider : IValueProvider
     {
-        private static readonly string[] AvailableTokens = new[] {"user_id"};
+        private static readonly string[] AvailableTokens = {"user_id"};
 
         public IEnumerable<string> Tokens => AvailableTokens;
 

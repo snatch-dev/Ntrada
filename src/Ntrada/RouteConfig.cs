@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Ntrada.Configuration;
 
-namespace Ntrada.Routing
+namespace Ntrada
 {
     public class RouteConfig
     {

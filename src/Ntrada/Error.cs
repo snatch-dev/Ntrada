@@ -1,4 +1,4 @@
-namespace Ntrada.Models
+namespace Ntrada
 {
     public class Error
     {

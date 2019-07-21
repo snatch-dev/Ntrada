@@ -1,6 +1,6 @@
 using Ntrada.Configuration;
 
-namespace Ntrada.Routing
+namespace Ntrada
 {
     public interface IRouteConfigurator
     {

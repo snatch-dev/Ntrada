@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Ntrada.Values
+namespace Ntrada
 {
     public interface IValueProvider
     {

@@ -62,7 +62,7 @@ namespace Ntrada.Routing
             var hasService = module.Services.TryGetValue(basePath, out var service);
             if (!hasService)
             {
-                return UpdateProtocol(route.Downstream);
+                return SetProtocol(route.Downstream);
             }
 
             if (service is null)
@@ -74,15 +74,16 @@ namespace Ntrada.Routing
             {
                 if (string.IsNullOrWhiteSpace(service.LocalUrl))
                 {
-                    throw new ArgumentException($"Local URL for: '{basePath}' cannot be empty if use_local_url = true.", nameof(service.LocalUrl));
+                    throw new ArgumentException($"Local URL for: '{basePath}' cannot be empty if use_local_url = true.",
+                        nameof(service.LocalUrl));
                 }
-                
-                return UpdateProtocol(route.Downstream.Replace(basePath, service.LocalUrl));
+
+                return SetProtocol(route.Downstream.Replace(basePath, service.LocalUrl));
             }
 
             if (!string.IsNullOrWhiteSpace(service.LocalUrl) && string.IsNullOrWhiteSpace(service.Url))
             {
-                return UpdateProtocol(route.Downstream.Replace(basePath, service.LocalUrl));
+                return SetProtocol(route.Downstream.Replace(basePath, service.LocalUrl));
             }
 
             if (string.IsNullOrWhiteSpace(service.Url))
@@ -92,20 +93,19 @@ namespace Ntrada.Routing
 
             if (!loadBalancerEnabled)
             {
-                return UpdateProtocol(route.Downstream.Replace(basePath, service.Url));
+                return SetProtocol(route.Downstream.Replace(basePath, service.Url));
             }
 
             if (!service.Url.StartsWith(LoadBalancerPattern, StringComparison.InvariantCultureIgnoreCase))
             {
-                return UpdateProtocol(route.Downstream.Replace(basePath, service.Url));
+                return SetProtocol(route.Downstream.Replace(basePath, service.Url));
             }
 
             var serviceUrl = service.Url.Replace(LoadBalancerPattern, _configuration.LoadBalancer.Url);
 
-            return UpdateProtocol(route.Downstream.Replace(basePath, serviceUrl));
+            return SetProtocol(route.Downstream.Replace(basePath, serviceUrl));
         }
 
-        private static string UpdateProtocol(string service) =>
-            service.StartsWith("http") ? service : $"http://{service}";
+        private static string SetProtocol(string service) => service.StartsWith("http") ? service : $"http://{service}";
     }
 }

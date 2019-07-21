@@ -11,16 +11,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using Ntrada.Auth;
-using Ntrada.Builders;
 using Ntrada.Configuration;
 using Ntrada.Extensions;
 using Ntrada.Extensions.Tracing;
+using Ntrada.Handlers;
 using Ntrada.Middleware;
-using Ntrada.Requests;
-using Ntrada.Routing;
-using Ntrada.Schema;
-using Ntrada.Values;
 using Polly;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -37,12 +32,12 @@ namespace Ntrada
 
 
  /___ API Gateway (Entrance) ___/";
-        
+
         public static INtradaBuilder UseNtrada(this IWebHostBuilder webHostBuilder, string configPath = "ntrada.yml")
         {
             var newLine = Environment.NewLine;
             Console.WriteLine($"{newLine}{newLine}{Logo}{newLine}{newLine}");
-            
+            var ntradaBuilder = new NtradaBuilder(webHostBuilder);
             var configPathVariable = Environment.GetEnvironmentVariable("NTRADA_CONFIG");
             if (!string.IsNullOrWhiteSpace(configPathVariable))
             {
@@ -129,15 +124,15 @@ namespace Ntrada
                 allModules.AddRange(modules);
                 configuration.Modules = allModules;
             }
-            
-            var ntradaBuilder = new NtradaBuilder(webHostBuilder);
 
-             webHostBuilder.ConfigureServices(s =>
+            webHostBuilder.ConfigureServices(s =>
                 {
+
+                    s.AddNtrada();
+                    s.AddSingleton(configuration);
                     s.AddMvcCore()
                         .AddJsonFormatters()
                         .AddJsonOptions(o => o.SerializerSettings.Formatting = Formatting.Indented);
-
                     s.AddLogging(
                         builder =>
                         {
@@ -146,8 +141,6 @@ namespace Ntrada
                                 .AddConsole();
                         });
                     s.AddJaeger();
-                    s.AddSingleton<IExtensionManager, ExtensionManager>();
-                    s.AddSingleton(configuration);
 
                     var httpClientBuilder = s.AddHttpClient("ntrada");
                     httpClientBuilder.AddTransientHttpErrorPolicy(p =>
@@ -159,7 +152,6 @@ namespace Ntrada
 
                             return TimeSpan.FromSeconds(interval);
                         }));
-
 
                     if (authenticationConfig is null || !useJwt)
                     {
@@ -207,9 +199,8 @@ namespace Ntrada
                 })
                 .Configure(app =>
                 {
-                    var extensionManager = app.ApplicationServices.GetService<IExtensionManager>();
+                    var extensionManager = app.ApplicationServices.GetRequiredService<IExtensionManager>();
                     extensionManager.Initialize(ntradaBuilder.Extensions);
-                    
                     if (useErrorHandler)
                     {
                         app.UseMiddleware<ErrorHandlerMiddleware>();
@@ -247,15 +238,19 @@ namespace Ntrada
                             .ToLowerInvariant();
                     }
 
-                    var routeProvider = new RouteProvider(app.ApplicationServices,
-                        new RequestProcessor(configuration, new ValueProvider(), new SchemaValidator()),
-                        new RouteConfigurator(configuration), new AccessValidator(configuration), extensionManager,
-                        configuration, app.ApplicationServices.GetService<ILogger<RouteProvider>>());
+                    var requestHandlerManager = app.ApplicationServices.GetRequiredService<IRequestHandlerManager>();
+                    requestHandlerManager.AddHandler("dispatcher",
+                        app.ApplicationServices.GetRequiredService<DispatcherHandler>());
+                    requestHandlerManager.AddHandler("downstream",
+                        app.ApplicationServices.GetRequiredService<DownstreamHandler>());
+                    requestHandlerManager.AddHandler("return_value",
+                        app.ApplicationServices.GetRequiredService<ReturnValueHandler>());
 
+                    var routeProvider = app.ApplicationServices.GetRequiredService<IRouteProvider>();
                     app.UseRouter(routeProvider.Build());
                 });
 
-             return ntradaBuilder;
+            return ntradaBuilder;
         }
     }
 }

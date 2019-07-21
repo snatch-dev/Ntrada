@@ -2,9 +2,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NJsonSchema;
-using Ntrada.Models;
 
-namespace Ntrada.Schema
+namespace Ntrada.Requests
 {
     public class SchemaValidator : ISchemaValidator
     {

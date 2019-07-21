@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Ntrada.Models;
 
-namespace Ntrada.Schema
+namespace Ntrada
 {
     public interface ISchemaValidator
     {

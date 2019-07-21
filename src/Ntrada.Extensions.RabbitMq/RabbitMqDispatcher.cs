@@ -1,11 +1,7 @@
 using System;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Ntrada.Configuration;
-using Ntrada.Models;
 using OpenTracing;
 using RawRabbit;
 using RawRabbit.Configuration;

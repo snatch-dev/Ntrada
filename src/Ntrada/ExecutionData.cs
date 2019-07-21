@@ -5,11 +5,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Route = Ntrada.Configuration.Route;
 
-namespace Ntrada.Models
+namespace Ntrada
 {
     public class ExecutionData
     {
         public string RequestId { get; set; }
+        public string ResourceId { get; set; }
+        public string TraceId { get; set; }
+        public string UserId { get; set; }
+        public string ContentType { get; set; }
         public Route Route { get; set; }
         public HttpRequest Request { get; set; }
         public HttpResponse Response { get; set; }
@@ -18,8 +22,5 @@ namespace Ntrada.Models
         public ExpandoObject Payload { get; set; }
         public IEnumerable<Error> ValidationErrors { get; set; } = Enumerable.Empty<Error>();
         public bool IsPayloadValid => !ValidationErrors.Any();
-        public string ContentType { get; set; }
-        public string ResourceId { get; set; }
-        public string UserId { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-namespace Ntrada.Extensions
+namespace Ntrada
 {
     public interface IDispatcherExtension : IExtension
     {

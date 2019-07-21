@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
-using Ntrada.Extensions;
 
-namespace Ntrada.Builders
+namespace Ntrada
 {
     public interface INtradaBuilder : IWebHostBuilder
     {

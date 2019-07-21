@@ -1,5 +1,3 @@
-using Ntrada.Builders;
-
 namespace Ntrada.Extensions.RabbitMq
 {
     public static class Extensions

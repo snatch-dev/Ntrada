@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 
-namespace Ntrada.Extensions
+namespace Ntrada
 {
     public interface IExtensionManager
     {
-        IEnumerable<IExtension> GetAll();
+        IDictionary<string, IExtension> Extensions { get; }
         T Get<T>(string name) where T : class, IExtension;
         void Initialize(IEnumerable<Type> registeredExtensions = null);
     }

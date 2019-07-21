@@ -2,16 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Loader;
 using Microsoft.Extensions.Logging;
-using Ntrada.Configuration;
 
 namespace Ntrada.Extensions
 {
     public class ExtensionManager : IExtensionManager
     {
+        private static readonly string[] DefaultExtensions = {"downstream", "return_value"};
+        private static readonly string[] AvailableExtensions = {"dispatcher"};
         private static readonly string ExtensionsDirectory = "extensions";
-        private ISet<IExtension> _extensions = new HashSet<IExtension>();
+        private IDictionary<string, IExtension> _extensions = new Dictionary<string, IExtension>();
         private readonly NtradaConfiguration _configuration;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger _logger;
@@ -24,10 +26,11 @@ namespace Ntrada.Extensions
             _logger = logger;
         }
 
-        public IEnumerable<IExtension> GetAll() => _extensions;
+        public IDictionary<string, IExtension> Extensions => _extensions;
 
         public T Get<T>(string name) where T : class, IExtension
-            => _extensions.SingleOrDefault(e => e.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase)) as T;
+            => _extensions.SingleOrDefault(e => e.Value.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase))
+                .Value as T;
 
         public void Initialize(IEnumerable<Type> registeredExtensions = null)
         {
@@ -47,14 +50,14 @@ namespace Ntrada.Extensions
             activatedExtensions.AddRange(allExtensions.Select(type =>
                 Activator.CreateInstance(type, _serviceProvider) as IExtension));
 
-            var emptyExtensionsNames = _extensions.Where(e => string.IsNullOrWhiteSpace(e.Name)).ToList();
+            var emptyExtensionsNames = _extensions.Values.Where(e => string.IsNullOrWhiteSpace(e.Name)).ToList();
             if (emptyExtensionsNames.Any())
             {
                 throw new InvalidOperationException("Extension names cannot be empty: " +
                                                     $"{string.Join(", ", emptyExtensionsNames.Select(e => e.GetType().Name))}");
             }
 
-            var notUniqueNames = _extensions.Select(e => e.Name.ToLowerInvariant())
+            var notUniqueNames = _extensions.Values.Select(e => e.Name.ToLowerInvariant())
                 .GroupBy(n => n)
                 .Where(n => n.Count() > 1)
                 .Select(n => n.Key)
@@ -66,8 +69,7 @@ namespace Ntrada.Extensions
                                                     $"{string.Join(", ", notUniqueNames)}");
             }
 
-            _extensions = new HashSet<IExtension>(activatedExtensions);
-
+            _extensions = Load(activatedExtensions.ToDictionary(e => e.Name, e => e));
             _logger.LogInformation($"Loaded {activatedExtensions.Count} extension(s): " +
                                    $"{string.Join(", ", activatedExtensions.Select(e => e.Name))}");
         }
@@ -101,6 +103,59 @@ namespace Ntrada.Extensions
                 var serviceType = typeof(IExtension);
                 var types = assembly.ExportedTypes.Where(t => serviceType.IsAssignableFrom(t)).ToArray();
                 extensions.AddRange(types);
+            }
+
+            return extensions;
+        }
+
+        private IDictionary<string, IExtension> Load(IDictionary<string, IExtension> providedExtensions)
+        {
+            var usedExtensions = _configuration.Modules
+                .SelectMany(m => m.Routes)
+                .Select(r => r.Use)
+                .Distinct()
+                .Except(DefaultExtensions)
+                .ToArray();
+
+            var unavailableExtensions = usedExtensions.Except(AvailableExtensions).ToArray();
+            if (unavailableExtensions.Any())
+            {
+                throw new Exception($"Unavailable extensions: '{string.Join(", ", unavailableExtensions)}'");
+            }
+
+            var enabledExtensions = _configuration.Extensions.Select(e => e.Key);
+            var undefinedExtensions = usedExtensions.Except(enabledExtensions).ToArray();
+            if (undefinedExtensions.Any())
+            {
+                throw new Exception($"Undefined extensions: '{string.Join(", ", undefinedExtensions)}'");
+            }
+
+            var extensions = new Dictionary<string, IExtension>();
+
+            if (!_configuration.Extensions.Any())
+            {
+                return extensions;
+            }
+
+            var extensionsTypes = Assembly.GetExecutingAssembly()
+                .GetTypes()
+                .Where(t => t.GetInterfaces().Contains(typeof(IExtension)))
+                .ToList();
+
+            if (!extensionsTypes.Any())
+            {
+                return extensions;
+            }
+
+            foreach (var extension in _configuration.Extensions)
+            {
+                var extensionName = extension.Value.Use;
+                if (!providedExtensions.ContainsKey(extensionName))
+                {
+                    throw new ArgumentException($"Extension: '{extensionName}' was not found.", nameof(extensionName));
+                }
+
+                extensions[extension.Key] = providedExtensions[extensionName];
             }
 
             return extensions;

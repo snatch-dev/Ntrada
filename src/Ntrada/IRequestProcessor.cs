@@ -1,10 +1,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Ntrada.Models;
-using Ntrada.Routing;
 
-namespace Ntrada.Requests
+namespace Ntrada
 {
     public interface IRequestProcessor
     {

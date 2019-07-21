@@ -1,9 +1,8 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Ntrada.Routing;
 
-namespace Ntrada.Auth
+namespace Ntrada
 {
     public interface IAccessValidator
     {

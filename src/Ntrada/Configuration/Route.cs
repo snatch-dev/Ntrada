@@ -23,6 +23,8 @@ namespace Ntrada.Configuration
         public bool? ForwardRequestHeaders { get; set; }
         public bool? ForwardResponseHeaders { get; set; }
         public bool? ForwardStatusCode { get; set; }
+        public bool? GenerateRequestId { get; set; }
+        public bool? GenerateTraceId { get; set; }
         public OnError OnError { get; set; }
         public OnSuccess OnSuccess { get; set; }
         public IDictionary<string, string> Claims { get; set; } = new Dictionary<string, string>();
