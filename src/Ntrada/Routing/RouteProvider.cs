@@ -11,7 +11,6 @@ namespace Ntrada.Routing
     public class RouteProvider : IRouteProvider
     {
         private readonly IDictionary<string, Action<IRouteBuilder, string, RouteConfig>> _methods;
-        private readonly IDictionary<string, IExtension> _extensions;
         private readonly IRouteConfigurator _routeConfigurator;
         private readonly IRequestExecutionValidator _requestExecutionValidator;
         private readonly IUpstreamBuilder _upstreamBuilder;
@@ -21,7 +20,7 @@ namespace Ntrada.Routing
 
         public RouteProvider(NtradaConfiguration configuration, IRequestHandlerManager requestHandlerManager,
             IRouteConfigurator routeConfigurator, IRequestExecutionValidator requestExecutionValidator,
-            IUpstreamBuilder upstreamBuilder, IExtensionManager extensionManager, ILogger<RouteProvider> logger)
+            IUpstreamBuilder upstreamBuilder, ILogger<RouteProvider> logger)
         {
             _routeConfigurator = routeConfigurator;
             _requestExecutionValidator = requestExecutionValidator;
@@ -29,7 +28,6 @@ namespace Ntrada.Routing
             _configuration = configuration;
             _requestHandlerManager = requestHandlerManager;
             _logger = logger;
-            _extensions = extensionManager.Extensions;
             _methods = new Dictionary<string, Action<IRouteBuilder, string, RouteConfig>>
             {
                 ["get"] = (builder, path, routeConfig) =>
@@ -63,16 +61,11 @@ namespace Ntrada.Routing
         }
 
         public Action<IRouteBuilder> Build()
-            => async routeBuilder =>
+            => routeBuilder =>
             {
-                foreach (var extension in _extensions)
-                {
-                    await extension.Value.InitAsync();
-                }
-
                 foreach (var module in _configuration.Modules.Where(m => m.Enabled != false))
                 {
-                    _logger.LogInformation($"Building routes for module: '{module.Name}'");
+                    _logger.LogInformation($"Building routes for the module: '{module.Name}'");
                     foreach (var route in module.Routes)
                     {
                         route.Upstream = _upstreamBuilder.Build(module, route);

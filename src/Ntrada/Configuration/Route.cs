@@ -15,8 +15,6 @@ namespace Ntrada.Configuration
         public string ReturnValue { get; set; }
         public string Payload { get; set; }
         public string Schema { get; set; }
-        public string Exchange { get; set; }
-        public string RoutingKey { get; set; }
         public bool? Auth { get; set; }
         public IDictionary<string, string> RequestHeaders { get; set; }
         public IDictionary<string, string> ResponseHeaders { get; set; }
@@ -31,5 +29,6 @@ namespace Ntrada.Configuration
         public IEnumerable<string> Policies { get; set; } = Enumerable.Empty<string>();
         public IEnumerable<string> Bind { get; set; } = Enumerable.Empty<string>();
         public IEnumerable<string> Transform { get; set; } = Enumerable.Empty<string>();
+        public IDictionary<string, string> Config { get; set; }
     }
 }

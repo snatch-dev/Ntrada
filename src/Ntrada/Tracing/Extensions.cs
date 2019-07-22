@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using OpenTracing;
 using OpenTracing.Util;
 
-namespace Ntrada.Extensions.Tracing
+namespace Ntrada.Tracing
 {
     public static class Extensions
     {

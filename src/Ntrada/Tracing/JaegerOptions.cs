@@ -1,4 +1,4 @@
-namespace Ntrada.Extensions.Tracing
+namespace Ntrada.Tracing
 {
     public class JaegerOptions
     {

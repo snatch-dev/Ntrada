@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada.Handlers
 {
@@ -37,6 +38,9 @@ namespace Ntrada.Handlers
             _configuration = configuration;
             _logger = logger;
         }
+
+        public string GetInfo(Route route) =>
+            $"call the downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
 
         public async Task HandleAsync(HttpRequest request, HttpResponse response, RouteData routeData,
             RouteConfig routeConfig)

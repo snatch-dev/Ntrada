@@ -5,9 +5,9 @@
     <VersionPrefix>1.0.7</VersionPrefix>
     <Authors>Piotr Gankiewicz</Authors>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <Title>Ntrada.Extensions.RabbitMq_</Title>
-    <PackageId>Ntrada.Extensions.RabbitMq_</PackageId>
-    <PackageTags>Ntrada.Extensions.RabbitMq_</PackageTags>
+    <Title>Ntrada.Handlers.RabbitMq_</Title>
+    <PackageId>Ntrada.Handlers.RabbitMq_</PackageId>
+    <PackageTags>Ntrada.Handlers.RabbitMq_</PackageTags>
     <PackageProjectUrl>https://github.com/spetz/ntrada</PackageProjectUrl>
     <PackageLicense>https://github.com/spetz/ntrada/blob/master/LICENSE</PackageLicense>
   </PropertyGroup>

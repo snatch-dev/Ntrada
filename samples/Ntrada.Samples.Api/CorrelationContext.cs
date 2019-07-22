@@ -1,8 +1,8 @@
 using System;
 
-namespace Ntrada.Extensions.RabbitMq
+namespace Ntrada.Samples.Api
 {
-    public class CorrelationContext : ICorrelationContext
+    public class CorrelationContext
     {
         public string Id { get; set; }
         public string UserId { get; set; }

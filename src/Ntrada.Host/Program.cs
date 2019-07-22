@@ -8,7 +8,8 @@ namespace Ntrada.Host
     {
         public static async Task Main(string[] args)
             => await WebHost.CreateDefaultBuilder(args)
-                .UseNtrada()
+                .ConfigureServices(services => services.AddNtrada())
+                .Configure(app => app.UseNtrada())
                 .Build()
                 .RunAsync();
     }

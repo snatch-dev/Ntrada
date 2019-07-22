@@ -20,9 +20,10 @@ routes:
     
 - upstream: /
   method: POST
-  use: dispatcher
-  exchange: customers.create_customer
-  routing_key: create_customer
+  use: message_broker
+  config:
+    exchange: customers.create_customer
+    routing_key: create_customer
   bind:
   - id:@user_id
   payload: create_customer

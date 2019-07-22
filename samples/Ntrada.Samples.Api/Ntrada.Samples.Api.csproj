@@ -7,13 +7,18 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Ntrada\Ntrada.csproj" />
-    <ProjectReference Include="..\..\src\Ntrada.Extensions.RabbitMq\Ntrada.Extensions.RabbitMq.csproj" />
+    <ProjectReference Include="..\..\src\Ntrada.Handlers.RabbitMq\Ntrada.Handlers.RabbitMq.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="ntrada.yml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTracing" Version="0.12.0" />
+    <PackageReference Include="OpenTracing.Contrib.NetCore" Version="0.6.0" />
   </ItemGroup>
 
 </Project>

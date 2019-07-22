@@ -1,6 +1,6 @@
 using RawRabbit.Configuration;
 
-namespace Ntrada.Extensions.RabbitMq
+namespace Ntrada.Handlers.RabbitMq
 {
     public class RabbitMqOptions : RawRabbitConfiguration
     {

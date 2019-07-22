@@ -6,6 +6,7 @@ namespace Ntrada
 {
     public interface IRequestHandlerManager
     {
+        IHandler Get(string name);
         void AddHandler(string name, IHandler handler);
 
         Task HandleAsync(string handler, HttpRequest request, HttpResponse response, RouteData routeData,

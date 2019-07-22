@@ -16,9 +16,10 @@ routes:
   
 - upstream: /
   method: POST
-  use: dispatcher
-  exchange: orders.create_order
-  routing_key: create_order
+  use: message_broker
+  config:
+    exchange: orders.create_order
+    routing_key: create_order
   bind:
   - customerId:@user_id
   payload: create_order
@@ -26,9 +27,10 @@ routes:
   
 - upstream: /{id:guid}/complete
   method: POST
-  use: dispatcher
-  exchange: orders.complete_order
-  routing_key: complete_order
+  use: message_broker
+  config:
+    exchange: orders.complete_order
+    routing_key: complete_order
   bind:
   - id:{id}
   - customerId:@user_id
@@ -37,9 +39,10 @@ routes:
   
 - upstream: /{id:guid}/approve
   method: POST
-  use: dispatcher
-  exchange: orders.approve_order
-  routing_key: approve_order
+  use: message_broker
+  config:
+    exchange: orders.approve_order
+    routing_key: approve_order
   bind:
   - id:{id}
   payload: approve_order
@@ -49,9 +52,10 @@ routes:
     
 - upstream: /{id:guid}
   method: DELETE
-  use: dispatcher
-  exchange: orders.cancel_order
-  routing_key: cancel_order
+  use: message_broker
+  config:
+    exchange: orders.cancel_order
+    routing_key: cancel_order
   bind:
   - id:{id}
   - customerId:@user_id

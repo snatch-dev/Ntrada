@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{FEC4
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ntrada.Samples.Api", "samples\Ntrada.Samples.Api\Ntrada.Samples.Api.csproj", "{8FFC6EE5-DF41-421F-A3B5-AC29BF22D827}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ntrada.Extensions.RabbitMq", "src\Ntrada.Extensions.RabbitMq\Ntrada.Extensions.RabbitMq.csproj", "{EE7F8EBC-9603-4A30-898E-7C606BC534E7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ntrada.Handlers.RabbitMq", "src\Ntrada.Handlers.RabbitMq\Ntrada.Handlers.RabbitMq.csproj", "{EE7F8EBC-9603-4A30-898E-7C606BC534E7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ntrada.Host", "src\Ntrada.Host\Ntrada.Host.csproj", "{0B949CC3-A1AF-4460-A942-D03ADA500BC0}"
 EndProject

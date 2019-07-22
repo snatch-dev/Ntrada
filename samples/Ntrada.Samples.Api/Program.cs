@@ -1,7 +1,8 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Ntrada.Extensions.RabbitMq;
+using Microsoft.Extensions.DependencyInjection;
+using Ntrada.Handlers.RabbitMq;
 
 namespace Ntrada.Samples.Api
 {
@@ -9,8 +10,14 @@ namespace Ntrada.Samples.Api
     {
         public static async Task Main(string[] args)
             => await WebHost.CreateDefaultBuilder(args)
-                .UseNtrada()
-                .UseRabbitMq()
+                .ConfigureServices(services => services
+                    .AddOpenTracing()
+                    .AddSingleton<IContextBuilder, CorrelationContextBuilder>()
+                    .AddRabbitMq<CorrelationContext>()
+                    .AddNtrada())
+                .Configure(app => app
+                    .UseRabbitMq()
+                    .UseNtrada())
                 .Build()
                 .RunAsync();
     }

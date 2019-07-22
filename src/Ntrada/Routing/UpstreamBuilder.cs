@@ -5,15 +5,15 @@ namespace Ntrada.Routing
 {
     public class UpstreamBuilder : IUpstreamBuilder
     {
-        private readonly IRouteConfigurator _routeConfigurator;
         private readonly NtradaConfiguration _configuration;
+        private readonly IRequestHandlerManager _requestHandlerManager;
         private readonly ILogger<UpstreamBuilder> _logger;
 
-        public UpstreamBuilder(IRouteConfigurator routeConfigurator, NtradaConfiguration configuration,
+        public UpstreamBuilder(NtradaConfiguration configuration, IRequestHandlerManager requestHandlerManager,
             ILogger<UpstreamBuilder> logger)
         {
-            _routeConfigurator = routeConfigurator;
             _configuration = configuration;
+            _requestHandlerManager = requestHandlerManager;
             _logger = logger;
         }
 
@@ -41,20 +41,8 @@ namespace Ntrada.Routing
                 upstream = "/";
             }
 
-            var routeInfo = string.Empty;
-            switch (route.Use)
-            {
-                case "dispatcher":
-                    routeInfo = $"dispatch a message to exchange: '{route.Exchange}'";
-                    break;
-                case "downstream":
-                    routeInfo = $"call downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
-                    break;
-                case "return_value":
-                    routeInfo = $"return a value: '{route.ReturnValue}'";
-                    break;
-            }
-
+            var handler = _requestHandlerManager.Get(route.Use);
+            var routeInfo = handler.GetInfo(route);
             var isProtectedInfo = _configuration.Auth is null || !_configuration.Auth.Global && route.Auth is null ||
                                   route.Auth == false
                 ? "public"

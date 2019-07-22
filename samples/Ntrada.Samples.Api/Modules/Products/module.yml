@@ -18,9 +18,10 @@ routes:
   
 - upstream: /
   method: POST
-  use: dispatcher
-  exchange: products.create_product
-  routing_key: create_product
+  use: message_broker
+  config:
+    routing_key: create_product
+    exchange: products.create_product
   payload: create_product
   schema: create_product.schema
   claims:
@@ -28,9 +29,10 @@ routes:
     
 - upstream: /{id:guid}
   method: PUT
-  use: dispatcher
-  exchange: products.update_product
-  routing_key: update_product
+  use: message_broker
+  config:
+    exchange: products.update_product
+    routing_key: update_product
   payload: update_product
   schema: update_product.schema
   bind:
@@ -40,9 +42,10 @@ routes:
     
 - upstream: /{id:guid}
   method: DELETE
-  use: dispatcher
-  exchange: products.delete_product
-  routing_key: delete_product
+  use: message_broker
+  config:
+    exchange: products.delete_product
+    routing_key: delete_product
   payload: delete_product
   schema: delete_product.schema
   bind:
