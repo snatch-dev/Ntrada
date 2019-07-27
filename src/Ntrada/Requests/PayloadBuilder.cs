@@ -52,7 +52,9 @@ namespace Ntrada.Requests
             var commandValues = (IDictionary<string, object>) command;
             if (!string.IsNullOrWhiteSpace(resourceId))
             {
-                var resourceIdProperty = _configuration.ResourceId.Property;
+                var resourceIdProperty = string.IsNullOrWhiteSpace(route.ResourceId?.Property)
+                    ? _configuration.ResourceId.Property
+                    : route.ResourceId?.Property;
                 if (string.IsNullOrWhiteSpace(resourceIdProperty))
                 {
                     resourceIdProperty = ResourceIdProperty;

@@ -76,17 +76,20 @@ namespace Ntrada.Requests
             var requestId = string.Empty;
             var resourceId = string.Empty;
             var traceId = string.Empty;
-            if (_configuration.GenerateRequestId == true && (routeConfig.Route.GenerateRequestId != false))
+            if (routeConfig.Route.GenerateRequestId == true ||
+                _configuration.GenerateRequestId == true && (routeConfig.Route.GenerateRequestId != false))
             {
                 requestId = Guid.NewGuid().ToString("N");
             }
 
-            if (_configuration.ResourceId?.Generate == true && (routeConfig.Route.GenerateResourceId != false))
+            if (routeConfig.Route.ResourceId?.Generate == true ||
+                _configuration.ResourceId?.Generate == true && (routeConfig.Route.ResourceId?.Generate != false))
             {
                 resourceId = Guid.NewGuid().ToString("N");
             }
 
-            if (_configuration.GenerateTraceId == true && (routeConfig.Route.GenerateTraceId != false))
+            if (routeConfig.Route.GenerateTraceId == true ||
+                _configuration.GenerateTraceId == true && (routeConfig.Route.GenerateTraceId != false))
             {
                 traceId = request.HttpContext.TraceIdentifier;
             }

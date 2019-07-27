@@ -5,7 +5,7 @@ namespace Ntrada.Configuration
 {
     public class Route
     {
-        public bool? GenerateResourceId { get; set; }
+        public ResourceId ResourceId { get; set; }
         public string Upstream { get; set; }
         public string Method { get; set; }
         public string Use { get; set; }
