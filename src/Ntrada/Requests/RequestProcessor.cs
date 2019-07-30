@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -7,24 +9,22 @@ namespace Ntrada.Requests
 {
     public class RequestProcessor : IRequestProcessor
     {
-
-        private static readonly string ContentTypeApplicationJson = "application/json";
-        private static readonly string ContentTypeTextPlain = "text/plain";
-        private static readonly string ContentTypeHeader = "Content-Type";
+        private static readonly IDictionary<string, string> EmptyClaims = new Dictionary<string, string>();
+        private const string ContentTypeApplicationJson = "application/json";
+        private const string ContentTypeTextPlain = "text/plain";
+        private const string ContentTypeHeader = "Content-Type";
         private readonly NtradaConfiguration _configuration;
         private readonly IPayloadBuilder _payloadBuilder;
         private readonly IPayloadManager _payloadManager;
         private readonly IDownstreamBuilder _downstreamBuilder;
-        private readonly IValueProvider _valueProvider;
 
         public RequestProcessor(NtradaConfiguration configuration, IPayloadBuilder payloadBuilder,
-            IPayloadManager payloadManager, IDownstreamBuilder downstreamBuilder, IValueProvider valueProvider)
+            IPayloadManager payloadManager, IDownstreamBuilder downstreamBuilder)
         {
             _configuration = configuration;
             _payloadBuilder = payloadBuilder;
             _payloadManager = payloadManager;
             _downstreamBuilder = downstreamBuilder;
-            _valueProvider = valueProvider;
         }
 
         public async Task<ExecutionData> ProcessAsync(RouteConfig routeConfig,
@@ -51,7 +51,8 @@ namespace Ntrada.Requests
                 RequestId = requestId,
                 ResourceId = resourceId,
                 TraceId = traceId,
-                UserId = _valueProvider.Get("@user_id", request, data),
+                UserId = request.HttpContext.User?.Identity?.Name,
+                Claims = request.HttpContext.User?.Claims?.ToDictionary(c => c.Type, c => c.Value) ?? EmptyClaims,
                 ContentType = contentTypeValue,
                 Route = routeConfig.Route,
                 Request = request,

@@ -13,6 +13,7 @@ namespace Ntrada
         public string ResourceId { get; set; }
         public string TraceId { get; set; }
         public string UserId { get; set; }
+        public IDictionary<string, string> Claims { get; set; }
         public string ContentType { get; set; }
         public Route Route { get; set; }
         public HttpRequest Request { get; set; }
