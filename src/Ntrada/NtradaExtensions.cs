@@ -35,8 +35,10 @@ namespace Ntrada
  /___ API Gateway (Entrance) ___/";
 
 
-        public static IServiceCollection AddNtrada(this IServiceCollection services, string configPath = "ntrada.yml")
+        public static IServiceCollection AddNtrada(this IServiceCollection services, string configPath = "ntrada.yml",
+            Action<INtradaConfigurator> ntrada = null)
         {
+
             var configPathVariable = Environment.GetEnvironmentVariable("NTRADA_CONFIG");
             if (!string.IsNullOrWhiteSpace(configPathVariable))
             {
@@ -147,7 +149,10 @@ namespace Ntrada
 
                     return TimeSpan.FromSeconds(interval);
                 }));
-
+            
+            var ntradaBuilder = new NtradaConfigurator(httpClientBuilder);
+            ntrada?.Invoke(ntradaBuilder);
+            
             if (!(authenticationConfig is null) && useJwt)
             {
                 var jwtConfig = authenticationConfig.Jwt;
