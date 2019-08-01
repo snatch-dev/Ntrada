@@ -1,4 +1,5 @@
 using System;
+using Jaeger.Util;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Ntrada
@@ -18,5 +19,7 @@ namespace Ntrada
 
             return this;
         }
+
+        public Action<IHttpClient, ExecutionData> BeforeHttpRequest { get; set; }
     }
 }

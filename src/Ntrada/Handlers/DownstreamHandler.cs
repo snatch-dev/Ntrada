@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Ntrada.Hooks;
 using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada.Handlers
@@ -28,6 +29,7 @@ namespace Ntrada.Handlers
         private readonly IPayloadValidator _payloadValidator;
         private readonly NtradaConfiguration _configuration;
         private readonly ILogger<DownstreamHandler> _logger;
+        private readonly IBeforeHttpClientRequestHook _beforeHttpClientRequestHook;
 
         public DownstreamHandler(IServiceProvider serviceProvider, IRequestProcessor requestProcessor,
             IPayloadValidator payloadValidator, NtradaConfiguration configuration, ILogger<DownstreamHandler> logger)
@@ -37,6 +39,7 @@ namespace Ntrada.Handlers
             _payloadValidator = payloadValidator;
             _configuration = configuration;
             _logger = logger;
+            _beforeHttpClientRequestHook = _serviceProvider.GetService<IBeforeHttpClientRequestHook>();
         }
 
         public string GetInfo(Route route) =>
@@ -64,7 +67,7 @@ namespace Ntrada.Handlers
             var method = routeConfig.Route.Method.ToUpperInvariant();
             _logger.LogInformation($"Sending HTTP {method} request to: {routeConfig.Downstream} " +
                                    $"[Trace ID: {request.HttpContext.TraceIdentifier}]");
-            var httpResponse = GetRequestAsync(executionData);
+            var httpResponse = SendRequestAsync(executionData);
             if (httpResponse is null)
             {
                 return;
@@ -73,7 +76,7 @@ namespace Ntrada.Handlers
             await WriteResponseAsync(response, await httpResponse(), executionData);
         }
 
-        private Func<Task<HttpResponseMessage>> GetRequestAsync(ExecutionData executionData)
+        private Func<Task<HttpResponseMessage>> SendRequestAsync(ExecutionData executionData)
         {
             var httpClient = _serviceProvider.GetService<IHttpClientFactory>().CreateClient("ntrada");
             var method = (string.IsNullOrWhiteSpace(executionData.Route.DownstreamMethod)
@@ -109,6 +112,8 @@ namespace Ntrada.Handlers
 
                 httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, values.ToArray());
             }
+
+            _beforeHttpClientRequestHook?.Invoke(httpClient, executionData);
 
             switch (method)
             {
