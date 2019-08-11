@@ -55,6 +55,11 @@ public static class Program
 }
 ```
 
+More **real-world examples** (modules, asynchronous messaging, load balancing etc.) can be found in the following projects:
+
+* [NPost](https://github.com/devmentors/NPost.APIGateway)
+* [Pacco](https://github.com/devmentors/Pacco.APIGateway)
+
 More complex scenario can be found under [samples](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api) directory - it's using [modules](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api/Modules), message broker, authentication etc.
 This sample requires [RabbitMQ](https://www.rabbitmq.com) up and running and provides API Gateway for [DShop](https://github.com/devmentors/DNC-DShop) project (a mirror of [DShop.Api](https://github.com/devmentors/DNC-DShop.Api) which is a standalone ASP.NET Core application).
 
@@ -64,22 +69,27 @@ This sample requires [RabbitMQ](https://www.rabbitmq.com) up and running and pro
 
 ```yml
 use_error_handler: true
+use_jaeger: true
 use_forwarded_headers: true
 pass_query_string: true
 modules_path: Modules
-settings_path: Settings
 payloads_folder: Payloads
-
-resource_id:
-  property: id
-  generate: true
+forward_request_headers: true
+forward_response_headers: true
+generate_request_id: true
+generate_trace_id: true
+use_local_url: true
+load_balancer:
+  enabled: false
+  url: localhost:9999
 
 cors:
   enabled: true
   headers:
-  - X-Operation
-  - X-Resource
-  - X-Total-Count
+  - Request-ID
+  - Resource-ID
+  - Trace-ID
+  - Total-Count
 
 http:
   retries: 2
@@ -90,29 +100,16 @@ auth:
   type: jwt
   global: true
   jwt:
-    key: JLBMU2VbJZmt42sUwByUpJJF6Y5mG2gPNU9sQFUpJFcGFJdyKxskR3bxh527kax2UcXHvB
-    issuer: dshop-identity-service
+    key: eiquief5phee9pazo0Faegaez9gohThailiur5woy2befiech1oarai4aiLi6ahVecah3ie9Aiz6Peij
+    issuer: identity-service
     issuers:
     validate_issuer: true
     audience:
     audiences:
     validate_audience: false
-    validate_lifetime: false
+    validate_lifetime: true
   claims:
     role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
-#  policies:
-#    admin:
-#      claims:
-#        role: admin
-#    product_manager:
-#      claims:
-#        role: manager
-#        access: create_product
-
-extensions:
-  dispatcher:
-    use: rabbitmq
-    configuration: rabbitmq.json
 
 modules:
 - name: home
@@ -120,9 +117,8 @@ modules:
   - upstream: /
     method: GET
     use: return_value
-    return_value: Welcome to DShop API.
+    return_value: Welcome to Ntrada API.
     auth: false
-
 ```
 
 ----------------
@@ -130,68 +126,46 @@ modules:
 **Additional modules**
 
 ```yml
-name: Orders
-path: /orders
+name: Parcels
+path: /parcels
 
 routes:
 - upstream: /
   method: GET
   use: downstream
-  downstream: orders-service/orders?customerId=@user_id
-  on_success:
-    data: response.data.items
-  
-- upstream: /{id:guid}
+  downstream: parcels-service/parcels?customerId=@user_id
+
+- upstream: /{parcelId}
   method: GET
   use: downstream
-  downstream: orders-service/customers/@user_id/orders/{id}
-  
+  downstream: parcels-service/parcels/{parcelId}
+
+- upstream: /volume
+  method: GET
+  use: downstream
+  downstream: parcels-service/parcels/volume
+
 - upstream: /
   method: POST
-  use: dispatcher
-  exchange: orders.create_order
-  routing_key: create_order
+  auth: true
+  resource_id:
+    property: parcelId
+    generate: true
+  use: message_broker
+  config:
+    exchange: parcels
+    routing_key: parcels.add_parcel
   bind:
-  - customerId:@user_id
-  payload: create_order
-  schema: create_order.schema
-  
-- upstream: /{id:guid}/complete
-  method: POST
-  use: dispatcher
-  exchange: orders.complete_order
-  routing_key: complete_order
-  bind:
-  - id:{id}
-  - customerId:@user_id
-  payload: complete_order
-  schema: complete_order.schema
-  
-- upstream: /{id:guid}/approve
-  method: POST
-  use: dispatcher
-  exchange: orders.approve_order
-  routing_key: approve_order
-  bind:
-  - id:{id}
-  payload: approve_order
-  schema: approve_order.schema
-  claims:
-    role: admin
-    
-- upstream: /{id:guid}
-  method: DELETE
-  use: dispatcher
-  exchange: orders.cancel_order
-  routing_key: cancel_order
-  bind:
-  - id:{id}
-  - customerId:@user_id
-  payload: cancel_order
-  schema: cancel_order.schema
+    - customerId:@user_id
 
+- upstream: /{parcelId}
+  method: DELETE
+  use: downstream
+  downstream: parcels-service/parcels/{parcelId}
+  
 services:
-  orders-service:
-    url: localhost:5005
+  parcels-service:
+    local_url: localhost:5007
+    url: load_balancer/parcels-service
 #    url: localhost:9999/orders-service
 ```
