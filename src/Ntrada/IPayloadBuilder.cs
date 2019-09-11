@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Route = Ntrada.Configuration.Route;
+using Route = Ntrada.Core.Configuration.Route;
 
 namespace Ntrada
 {

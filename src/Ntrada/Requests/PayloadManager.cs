@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Ntrada.Core;
 
 namespace Ntrada.Requests
 {
@@ -31,7 +32,7 @@ namespace Ntrada.Requests
 
             foreach (var module in _configuration.Modules)
             {
-                foreach (var route in module.Routes)
+                foreach (var route in module.Value.Routes)
                 {
                     if (string.IsNullOrWhiteSpace(route.Payload))
                     {
@@ -39,14 +40,14 @@ namespace Ntrada.Requests
                     }
 
                     var payloadsFolder = _configuration.PayloadsFolder;
-                    var fullPath = $"{modulesPath}{module.Name}/{payloadsFolder}/{route.Payload}";
+                    var fullPath = $"{modulesPath}{module.Value.Name}/{payloadsFolder}/{route.Payload}";
                     var fullJsonPath = fullPath.EndsWith(".json") ? fullPath : $"{fullPath}.json";
                     if (!File.Exists(fullJsonPath))
                     {
                         continue;
                     }
 
-                    var schemaPath = $"{modulesPath}{module.Name}/{payloadsFolder}/{route.Schema}";
+                    var schemaPath = $"{modulesPath}{module.Value.Name}/{payloadsFolder}/{route.Schema}";
                     var fullSchemaPath = schemaPath.EndsWith(".json") ? schemaPath : $"{schemaPath}.json";
                     var schema = string.Empty;
                     if (File.Exists(fullSchemaPath))
@@ -58,9 +59,9 @@ namespace Ntrada.Requests
                     dynamic expandoObject = new ExpandoObject();
                     JsonConvert.PopulateObject(json, expandoObject);
                     var upstream = string.IsNullOrWhiteSpace(route.Upstream) ? string.Empty : route.Upstream;
-                    if (!string.IsNullOrWhiteSpace(module.Path))
+                    if (!string.IsNullOrWhiteSpace(module.Value.Path))
                     {
-                        var modulePath = module.Path.EndsWith("/") ? module.Path : $"{module.Path}/";
+                        var modulePath = module.Value.Path.EndsWith("/") ? module.Value.Path : $"{module.Value.Path}/";
                         if (upstream.StartsWith("/"))
                         {
                             upstream = upstream.Substring(1, upstream.Length - 1);

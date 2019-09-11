@@ -1,6 +1,7 @@
 using System;
 using Jaeger.Util;
 using Microsoft.Extensions.DependencyInjection;
+using Ntrada.Core;
 
 namespace Ntrada
 {

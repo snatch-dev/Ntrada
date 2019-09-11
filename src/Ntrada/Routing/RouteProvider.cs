@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+using Ntrada.Core;
 
 namespace Ntrada.Routing
 {
@@ -63,13 +64,13 @@ namespace Ntrada.Routing
         public Action<IRouteBuilder> Build()
             => routeBuilder =>
             {
-                foreach (var module in _configuration.Modules.Where(m => m.Enabled != false))
+                foreach (var module in _configuration.Modules.Where(m => m.Value.Enabled != false))
                 {
-                    _logger.LogInformation($"Building routes for the module: '{module.Name}'");
-                    foreach (var route in module.Routes)
+                    _logger.LogInformation($"Building routes for the module: '{module.Value.Name}'");
+                    foreach (var route in module.Value.Routes)
                     {
-                        route.Upstream = _upstreamBuilder.Build(module, route);
-                        var routeConfig = _routeConfigurator.Configure(module, route);
+                        route.Upstream = _upstreamBuilder.Build(module.Value, route);
+                        var routeConfig = _routeConfigurator.Configure(module.Value, route);
                         _methods[route.Method](routeBuilder, route.Upstream, routeConfig);
                     }
                 }

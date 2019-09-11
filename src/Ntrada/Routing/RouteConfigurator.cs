@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Ntrada.Configuration;
+using Ntrada.Core;
+using Ntrada.Core.Configuration;
 
 namespace Ntrada.Routing
 {

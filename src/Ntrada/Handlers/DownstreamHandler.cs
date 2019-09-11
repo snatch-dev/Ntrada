@@ -12,8 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Ntrada.Core;
 using Ntrada.Hooks;
-using Route = Ntrada.Configuration.Route;
+using Route = Ntrada.Core.Configuration.Route;
 
 namespace Ntrada.Handlers
 {

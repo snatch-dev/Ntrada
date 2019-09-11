@@ -1,0 +1,9 @@
+jwt:
+  key: eiquief5phee9pazo0Faegaez9gohThailiur5woy2befiech1oarai4aiLi6ahVecah3ie9Aiz6Peij
+  issuer: ntrada
+  issuers:
+  validate_issuer: true
+  audience:
+  audiences:
+  validate_audience: false
+  validate_lifetime: true

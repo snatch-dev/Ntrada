@@ -1,7 +1,48 @@
+app:
+  name: ntrada
+
+extensions:
+  jwt:
+#    order: 0
+#    enabled: true
+    key: eiquief5phee9pazo0Faegaez9gohThailiur5woy2befiech1oarai4aiLi6ahVecah3ie9Aiz6Peij
+    issuer: ntrada
+    issuers:
+    validate_issuer: true
+    audience:
+    audiences:
+    validate_audience: false
+    validate_lifetime: true
+    
+  rabbitmq:
+#    order: 1
+    enabled: false
+    username: guest
+    password: guest
+    virtualHost: "/"
+    port: 5672
+    hostnames:
+      - localhost
+    requestTimeout: '00:00:10'
+    publishConfirmTimeout: '00:00:01'
+    recoveryInterval: '00:00:10'
+    persistentDeliveryMode: true
+    autoCloseConnection: true
+    automaticRecovery: true
+    topologyRecovery: true
+    exchange:
+      durable: true
+      autoDelete: false
+      type: Topic
+    queue:
+      autoDelete: false
+      durable: true
+      exclusive: false
+
 modules:
-- name: home
-  routes:
-  - upstream: /
-    method: GET
-    use: return_value
-    return_value: Welcome to Ntrada API!
+  home:
+    routes:
+      - upstream: /
+        method: GET
+        use: return_value
+        return_value: Welcome to Ntrada API!

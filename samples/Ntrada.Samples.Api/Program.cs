@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Linq;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace Ntrada.Samples.Api
 {
@@ -19,6 +14,11 @@ namespace Ntrada.Samples.Api
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration(builder =>
+                {
+                    var configPath = args?.FirstOrDefault() ?? "ntrada.yml";
+                    builder.AddYamlFile(configPath, false);
+                })
                 .UseStartup<Startup>();
     }
 }

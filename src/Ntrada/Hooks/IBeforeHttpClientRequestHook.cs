@@ -1,4 +1,5 @@
 using System.Net.Http;
+using Ntrada.Core;
 
 namespace Ntrada.Hooks
 {

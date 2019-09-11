@@ -6,19 +6,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Ntrada\Ntrada.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="ntrada.yml" />
-    <Content Include="ntrada.yml">
+    <None Update="ntrada.yml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetEscapades.Configuration.Yaml" Version="1.6.0" />
   </ItemGroup>
 
 </Project>

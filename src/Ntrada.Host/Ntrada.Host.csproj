@@ -16,4 +16,8 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="NetEscapades.Configuration.Yaml" Version="1.6.0" />
+    </ItemGroup>
+
 </Project>

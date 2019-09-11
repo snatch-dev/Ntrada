@@ -1,0 +1,13 @@
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Route = Ntrada.Core.Configuration.Route;
+
+namespace Ntrada.Core
+{
+    public interface IHandler
+    {
+        string GetInfo(Route route);
+        Task HandleAsync(HttpRequest request, HttpResponse response, RouteData routeData, RouteConfig routeConfig);
+    }
+}

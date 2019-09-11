@@ -5,7 +5,8 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
-using Ntrada.Configuration;
+using Ntrada.Core;
+using Ntrada.Core.Configuration;
 
 namespace Ntrada.Auth
 {
@@ -30,8 +31,9 @@ namespace Ntrada.Auth
         private void VerifyPolicies()
         {
             var definedPolicies = _configuration.Modules
-                .SelectMany(m => m.Routes)
-                .SelectMany(r => r.Policies)
+                .Select(m => m.Value)
+                .SelectMany(m => m.Routes ?? Enumerable.Empty<Route>())
+                .SelectMany(r => r.Policies ?? Enumerable.Empty<string>())
                 .Distinct();
             var missingPolicies = definedPolicies
                 .Except(_policies.Select(p => p.Key))
