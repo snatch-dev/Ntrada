@@ -35,7 +35,6 @@ namespace Ntrada.Extensions.Jwt
 
         public void Use(IApplicationBuilder app, IOptionsProvider optionsProvider)
         {
-            app.UseAuthentication();
         }
     }
 }

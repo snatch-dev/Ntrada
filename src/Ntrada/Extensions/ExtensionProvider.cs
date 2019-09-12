@@ -2,18 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Ntrada.Core;
+using Ntrada.Options;
 
-namespace Ntrada
+namespace Ntrada.Extensions
 {
-    internal class ExtensionProvider : IExtensionProvider
+    internal sealed class ExtensionProvider : IExtensionProvider
     {
         private ISet<IEnabledExtension> _extensions = new HashSet<IEnabledExtension>();
 
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
 
-        public ExtensionProvider(NtradaConfiguration configuration)
+        public ExtensionProvider(NtradaOptions options)
         {
-            _configuration = configuration;
+            _options = options;
         }
 
         public IEnumerable<IEnabledExtension> GetAll()
@@ -36,9 +37,13 @@ namespace Ntrada
                     continue;
                 }
 
-                var options = _configuration.Extensions.SingleOrDefault(o =>
-                                  o.Key.Equals(extension.Name, StringComparison.InvariantCultureIgnoreCase)).Value ??
-                              new ExtensionOptions();
+                var options = _options.Extensions.SingleOrDefault(o =>
+                    o.Key.Equals(extension.Name, StringComparison.InvariantCultureIgnoreCase)).Value;
+
+                if (options is null)
+                {
+                    continue;
+                }
 
                 extensions.Add(new EnabledExtension(extension, options));
             }

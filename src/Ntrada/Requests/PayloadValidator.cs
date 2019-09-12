@@ -5,7 +5,7 @@ using Ntrada.Core;
 
 namespace Ntrada.Requests
 {
-    public class PayloadValidator : IPayloadValidator
+    internal sealed class PayloadValidator : IPayloadValidator
     {
         public async Task<bool> TryValidate(ExecutionData executionData, HttpResponse httpResponse)
         {

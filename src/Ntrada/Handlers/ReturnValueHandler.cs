@@ -6,12 +6,12 @@ using Route = Ntrada.Core.Configuration.Route;
 
 namespace Ntrada.Handlers
 {
-    public class ReturnValueHandler : IHandler
+    internal sealed class ReturnValueHandler : IHandler
     {
         public string GetInfo(Route route) => $"return a value: '{route.ReturnValue}'";
 
         public async Task HandleAsync(HttpRequest request, HttpResponse response, RouteData routeData,
             RouteConfig routeConfig)
-            => await response.WriteAsync(routeConfig.Route.ReturnValue);
+            => await response.WriteAsync(routeConfig.Route.ReturnValue ?? string.Empty);
     }
 }

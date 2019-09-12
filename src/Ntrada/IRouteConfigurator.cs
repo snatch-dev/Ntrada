@@ -3,7 +3,7 @@ using Ntrada.Core.Configuration;
 
 namespace Ntrada
 {
-    public interface IRouteConfigurator
+    internal interface IRouteConfigurator
     {
         RouteConfig Configure(Module module, Route route);
     }

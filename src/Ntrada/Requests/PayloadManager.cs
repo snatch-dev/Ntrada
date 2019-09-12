@@ -5,17 +5,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Ntrada.Core;
+using Ntrada.Options;
 
 namespace Ntrada.Requests
 {
-    public class PayloadManager : IPayloadManager
+    internal sealed class PayloadManager : IPayloadManager
     {
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
         private readonly ISchemaValidator _schemaValidator;
 
-        public PayloadManager(NtradaConfiguration configuration, ISchemaValidator schemaValidator)
+        public PayloadManager(NtradaOptions options, ISchemaValidator schemaValidator)
         {
-            _configuration = configuration;
+            _options = options;
             _schemaValidator = schemaValidator;
             Payloads = LoadPayloads();
         }
@@ -25,12 +26,12 @@ namespace Ntrada.Requests
         private IDictionary<string, PayloadSchema> LoadPayloads()
         {
             var payloads = new Dictionary<string, PayloadSchema>();
-            var modulesPath = _configuration.ModulesPath;
+            var modulesPath = _options.ModulesPath;
             modulesPath = string.IsNullOrWhiteSpace(modulesPath)
                 ? string.Empty
                 : (modulesPath.EndsWith("/") ? modulesPath : $"{modulesPath}/");
 
-            foreach (var module in _configuration.Modules)
+            foreach (var module in _options.Modules)
             {
                 foreach (var route in module.Value.Routes)
                 {
@@ -39,7 +40,7 @@ namespace Ntrada.Requests
                         continue;
                     }
 
-                    var payloadsFolder = _configuration.PayloadsFolder;
+                    var payloadsFolder = _options.PayloadsFolder;
                     var fullPath = $"{modulesPath}{module.Value.Name}/{payloadsFolder}/{route.Payload}";
                     var fullJsonPath = fullPath.EndsWith(".json") ? fullPath : $"{fullPath}.json";
                     if (!File.Exists(fullJsonPath))

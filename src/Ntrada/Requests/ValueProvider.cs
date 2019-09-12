@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Ntrada.Requests
 {
-    public class ValueProvider : IValueProvider
+    internal sealed class ValueProvider : IValueProvider
     {
         private static readonly string[] AvailableTokens = {"user_id"};
 

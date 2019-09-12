@@ -5,7 +5,7 @@ using Ntrada.Core;
 
 namespace Ntrada
 {
-    public interface IRequestExecutionValidator
+    internal interface IRequestExecutionValidator
     {
         Task<bool> TryExecuteAsync(HttpRequest request, HttpResponse response, RouteData data, RouteConfig routeConfig);
     }

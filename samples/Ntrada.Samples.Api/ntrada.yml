@@ -1,10 +1,49 @@
-app:
-  name: ntrada
+auth:
+  enabled: true
+  global: false
+  claims:
+    role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
+
+http:
+  retries: 2
+  interval: 2.0
+  exponential: true
+
+use_error_handler: true
+use_jaeger: true
+use_forwarded_headers: true
+pass_query_string: true
+modules_path: Modules
+payloads_folder: Payloads
+forward_request_headers: true
+forward_response_headers: true
+generate_request_id: true
+generate_trace_id: true
+use_local_url: true
+load_balancer:
+  enabled: false
+  url: localhost:9999
 
 extensions:
+  customErrors:
+    includeExceptionMessage: true
+  
+  cors:
+    allowCredentials: true
+    allowedOrigins:
+      - '*'
+    allowedMethods:
+      - post
+      - delete
+    allowedHeaders:
+      - '*'
+    exposedHeaders:
+      - Request-ID
+      - Resource-ID
+      - Trace-ID
+      - Total-Count
+    
   jwt:
-#    order: 0
-#    enabled: true
     key: eiquief5phee9pazo0Faegaez9gohThailiur5woy2befiech1oarai4aiLi6ahVecah3ie9Aiz6Peij
     issuer: ntrada
     issuers:
@@ -15,7 +54,6 @@ extensions:
     validate_lifetime: true
     
   rabbitmq:
-#    order: 1
     enabled: false
     username: guest
     password: guest
@@ -39,10 +77,18 @@ extensions:
       durable: true
       exclusive: false
 
+  tracing:
+    serviceName: ntrada
+    udpHost: localhost
+    udpPort: 6831
+    maxPacketSize: 0
+    sampler: const
+    useEmptyTracer: false
+
 modules:
   home:
     routes:
       - upstream: /
         method: GET
         use: return_value
-        return_value: Welcome to Ntrada API!
+        returnValue: Welcome to Ntrada API!

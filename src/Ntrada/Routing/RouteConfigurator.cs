@@ -3,19 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using Ntrada.Core;
 using Ntrada.Core.Configuration;
+using Ntrada.Options;
 
 namespace Ntrada.Routing
 {
-    public class RouteConfigurator : IRouteConfigurator
+    internal sealed class RouteConfigurator : IRouteConfigurator
     {
         private static readonly string LoadBalancerPattern = "load_balancer";
         private readonly IDictionary<string, string> _claims;
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
 
-        public RouteConfigurator(NtradaConfiguration configuration)
+        public RouteConfigurator(NtradaOptions options)
         {
-            _configuration = configuration;
-            _claims = _configuration?.Auth?.Claims ?? new Dictionary<string, string>();
+            _options = options;
+            _claims = _options?.Auth?.Claims ?? new Dictionary<string, string>();
         }
 
         public RouteConfig Configure(Module module, Route route)
@@ -46,8 +47,8 @@ namespace Ntrada.Routing
                 return null;
             }
 
-            var loadBalancerEnabled = _configuration.LoadBalancer?.Enabled == true;
-            var loadBalancerUrl = _configuration.LoadBalancer?.Url;
+            var loadBalancerEnabled = _options.LoadBalancer?.Enabled == true;
+            var loadBalancerUrl = _options.LoadBalancer?.Url;
             if (loadBalancerEnabled)
             {
                 if (string.IsNullOrWhiteSpace(loadBalancerUrl))
@@ -71,7 +72,7 @@ namespace Ntrada.Routing
                 throw new ArgumentException($"Service for: '{basePath}' was not defined.", nameof(service.Url));
             }
 
-            if (_configuration.UseLocalUrl)
+            if (_options.UseLocalUrl)
             {
                 if (string.IsNullOrWhiteSpace(service.LocalUrl))
                 {
@@ -102,7 +103,7 @@ namespace Ntrada.Routing
                 return SetProtocol(route.Downstream.Replace(basePath, service.Url));
             }
 
-            var serviceUrl = service.Url.Replace(LoadBalancerPattern, _configuration.LoadBalancer.Url);
+            var serviceUrl = service.Url.Replace(LoadBalancerPattern, _options.LoadBalancer.Url);
 
             return SetProtocol(route.Downstream.Replace(basePath, serviceUrl));
         }

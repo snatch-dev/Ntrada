@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using OpenTracing;
 using OpenTracing.Tag;
 
-namespace Ntrada.Tracing
+namespace Ntrada.Extensions.Tracing
 {
     internal sealed class JaegerHttpMiddleware
     {

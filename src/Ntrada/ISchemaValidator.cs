@@ -4,7 +4,7 @@ using Ntrada.Core;
 
 namespace Ntrada
 {
-    public interface ISchemaValidator
+    internal interface ISchemaValidator
     {
         Task<IEnumerable<Error>> ValidateAsync(string payload, string schema);
     }

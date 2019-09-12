@@ -6,14 +6,16 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Ntrada.Core;
 
-namespace Ntrada.Middleware
+namespace Ntrada.Extensions.CustomErrors
 {
     public class ErrorHandlerMiddleware : IMiddleware
     {
+        private readonly CustomErrorsOptions _options;
         private readonly ILogger<ErrorHandlerMiddleware> _logger;
 
-        public ErrorHandlerMiddleware(ILogger<ErrorHandlerMiddleware> logger)
+        public ErrorHandlerMiddleware(CustomErrorsOptions options, ILogger<ErrorHandlerMiddleware> logger)
         {
+            _options = options;
             _logger = logger;
         }
 
@@ -30,11 +32,11 @@ namespace Ntrada.Middleware
             }
         }
 
-        private static Task HandleErrorAsync(HttpContext context, Exception exception)
+        private Task HandleErrorAsync(HttpContext context, Exception exception)
         {
             var errorCode = "error";
             var statusCode = HttpStatusCode.BadRequest;
-            var message = exception.Message;
+            var message = _options.IncludeExceptionMessage ? exception.Message : "There was an error.";
             var response = new
             {
                 errors = new[]

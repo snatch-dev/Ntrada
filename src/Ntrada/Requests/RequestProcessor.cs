@@ -5,24 +5,25 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Ntrada.Core;
+using Ntrada.Options;
 
 namespace Ntrada.Requests
 {
-    public class RequestProcessor : IRequestProcessor
+    internal sealed class RequestProcessor : IRequestProcessor
     {
         private static readonly IDictionary<string, string> EmptyClaims = new Dictionary<string, string>();
         private const string ContentTypeApplicationJson = "application/json";
         private const string ContentTypeTextPlain = "text/plain";
         private const string ContentTypeHeader = "Content-Type";
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
         private readonly IPayloadBuilder _payloadBuilder;
         private readonly IPayloadManager _payloadManager;
         private readonly IDownstreamBuilder _downstreamBuilder;
 
-        public RequestProcessor(NtradaConfiguration configuration, IPayloadBuilder payloadBuilder,
+        public RequestProcessor(NtradaOptions options, IPayloadBuilder payloadBuilder,
             IPayloadManager payloadManager, IDownstreamBuilder downstreamBuilder)
         {
-            _configuration = configuration;
+            _options = options;
             _payloadBuilder = payloadBuilder;
             _payloadManager = payloadManager;
             _downstreamBuilder = downstreamBuilder;
@@ -43,9 +44,13 @@ namespace Ntrada.Requests
             var skipPayload = route.Use == "downstream" && (string.IsNullOrWhiteSpace(route.DownstreamMethod) ||
                                                             route.DownstreamMethod == "get" ||
                                                             route.DownstreamMethod == "delete");
+
+            var isCustomPayload = _payloadBuilder.IsCustom(requestId, route);
             var payload = skipPayload
                 ? null
-                : await _payloadBuilder.BuildAsync(resourceId, routeConfig.Route, request, data);
+                : isCustomPayload
+                    ? await _payloadBuilder.BuildAsync(resourceId, route, request, data)
+                    : null;
 
             var executionData = new ExecutionData
             {
@@ -60,7 +65,8 @@ namespace Ntrada.Requests
                 Response = response,
                 Data = data,
                 Downstream = _downstreamBuilder.GetDownstream(routeConfig, request, data),
-                Payload = payload?.Payload
+                Payload = payload?.Payload,
+                IsCustomPayload = isCustomPayload
             };
 
             if (skipPayload || payload is null)
@@ -79,19 +85,19 @@ namespace Ntrada.Requests
             var resourceId = string.Empty;
             var traceId = string.Empty;
             if (routeConfig.Route.GenerateRequestId == true ||
-                _configuration.GenerateRequestId == true && (routeConfig.Route.GenerateRequestId != false))
+                _options.GenerateRequestId == true && (routeConfig.Route.GenerateRequestId != false))
             {
                 requestId = Guid.NewGuid().ToString("N");
             }
 
             if (routeConfig.Route.ResourceId?.Generate == true ||
-                _configuration.ResourceId?.Generate == true && (routeConfig.Route.ResourceId?.Generate != false))
+                _options.ResourceId?.Generate == true && (routeConfig.Route.ResourceId?.Generate != false))
             {
                 resourceId = Guid.NewGuid().ToString("N");
             }
 
             if (routeConfig.Route.GenerateTraceId == true ||
-                _configuration.GenerateTraceId == true && (routeConfig.Route.GenerateTraceId != false))
+                _options.GenerateTraceId == true && (routeConfig.Route.GenerateTraceId != false))
             {
                 traceId = request.HttpContext.TraceIdentifier;
             }

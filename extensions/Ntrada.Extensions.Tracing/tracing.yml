@@ -1,0 +1,7 @@
+tracing:
+  serviceName: ntrada
+  udpHost: localhost
+  udpPort: 6831
+  maxPacketSize: 0
+  sampler: const
+  useEmptyTracer: false

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Routing;
 
 namespace Ntrada
 {
-    public interface IRouteProvider
+    internal interface IRouteProvider
     {
         Action<IRouteBuilder> Build();
     }

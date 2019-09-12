@@ -6,27 +6,28 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Ntrada.Core;
+using Ntrada.Options;
 
 namespace Ntrada.Routing
 {
-    public class RouteProvider : IRouteProvider
+    internal sealed class RouteProvider : IRouteProvider
     {
         private readonly IDictionary<string, Action<IRouteBuilder, string, RouteConfig>> _methods;
         private readonly IRouteConfigurator _routeConfigurator;
         private readonly IRequestExecutionValidator _requestExecutionValidator;
         private readonly IUpstreamBuilder _upstreamBuilder;
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
         private readonly IRequestHandlerManager _requestHandlerManager;
         private readonly ILogger<RouteProvider> _logger;
 
-        public RouteProvider(NtradaConfiguration configuration, IRequestHandlerManager requestHandlerManager,
+        public RouteProvider(NtradaOptions options, IRequestHandlerManager requestHandlerManager,
             IRouteConfigurator routeConfigurator, IRequestExecutionValidator requestExecutionValidator,
             IUpstreamBuilder upstreamBuilder, ILogger<RouteProvider> logger)
         {
             _routeConfigurator = routeConfigurator;
             _requestExecutionValidator = requestExecutionValidator;
             _upstreamBuilder = upstreamBuilder;
-            _configuration = configuration;
+            _options = options;
             _requestHandlerManager = requestHandlerManager;
             _logger = logger;
             _methods = new Dictionary<string, Action<IRouteBuilder, string, RouteConfig>>
@@ -52,7 +53,11 @@ namespace Ntrada.Routing
         private async Task Handle(HttpRequest request, HttpResponse response, RouteData routeData,
             RouteConfig routeConfig)
         {
-            if (!await _requestExecutionValidator.TryExecuteAsync(request, response, routeData, routeConfig))
+            var skipAuth = _options.Auth is null ||
+                           !_options.Auth.Global && routeConfig.Route.Auth is null ||
+                           routeConfig.Route.Auth == false;
+            if (!skipAuth &&
+                !await _requestExecutionValidator.TryExecuteAsync(request, response, routeData, routeConfig))
             {
                 return;
             }
@@ -64,7 +69,7 @@ namespace Ntrada.Routing
         public Action<IRouteBuilder> Build()
             => routeBuilder =>
             {
-                foreach (var module in _configuration.Modules.Where(m => m.Value.Enabled != false))
+                foreach (var module in _options.Modules.Where(m => m.Value.Enabled != false))
                 {
                     _logger.LogInformation($"Building routes for the module: '{module.Value.Name}'");
                     foreach (var route in module.Value.Routes)

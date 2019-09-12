@@ -1,0 +1,14 @@
+cors:
+  allowCredentials: true
+  allowedOrigins:
+    - '*'
+  allowedMethods:
+    - post
+    - delete
+  allowedHeaders:
+    - '*'
+  exposedHeaders:
+    - Request-ID
+    - Resource-ID
+    - Trace-ID
+    - Total-Count

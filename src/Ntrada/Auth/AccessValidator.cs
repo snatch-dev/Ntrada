@@ -7,30 +7,31 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Ntrada.Core;
 using Ntrada.Core.Configuration;
+using Ntrada.Options;
 
 namespace Ntrada.Auth
 {
-    public class AccessValidator : IAccessValidator
+    internal sealed class AccessValidator : IAccessValidator
     {
         private readonly IDictionary<string, string> _claims;
         private readonly IDictionary<string, Dictionary<string, string>> _policies;
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
 
-        public AccessValidator(NtradaConfiguration configuration)
+        public AccessValidator(NtradaOptions options)
         {
-            _configuration = configuration;
-            _claims = configuration.Auth?.Claims ?? new Dictionary<string, string>();
+            _options = options;
+            _claims = options.Auth?.Claims ?? new Dictionary<string, string>();
             _policies = GetPolicies();
             VerifyPolicies();
         }
 
         private Dictionary<string, Dictionary<string, string>> GetPolicies()
-            => (_configuration.Auth?.Policies ?? new Dictionary<string, Policy>())
+            => (_options.Auth?.Policies ?? new Dictionary<string, Policy>())
                 .ToDictionary(p => p.Key, p => p.Value.Claims.ToDictionary(c => GetClaimKey(c.Key), c => c.Value));
 
         private void VerifyPolicies()
         {
-            var definedPolicies = _configuration.Modules
+            var definedPolicies = _options.Modules
                 .Select(m => m.Value)
                 .SelectMany(m => m.Routes ?? Enumerable.Empty<Route>())
                 .SelectMany(r => r.Policies ?? Enumerable.Empty<string>())
@@ -49,8 +50,8 @@ namespace Ntrada.Auth
 
         public async Task<bool> IsAuthenticatedAsync(HttpRequest request, RouteConfig routeConfig)
         {
-            if (_configuration.Auth?.Global != true
-                || (routeConfig.Route.Auth.HasValue && routeConfig.Route.Auth == false))
+            if (_options.Auth?.Global != true
+                || routeConfig.Route.Auth.HasValue && routeConfig.Route.Auth == false)
             {
                 return true;
             }
@@ -64,12 +65,12 @@ namespace Ntrada.Auth
             => HasClaims(user, routeConfig.Claims) && HasPolicies(user, routeConfig.Route.Policies);
 
         private bool HasPolicies(ClaimsPrincipal user, IEnumerable<string> policies)
-            => policies.All(p => HasPolicy(user, p));
+            => policies?.All(p => HasPolicy(user, p)) == true;
 
         private bool HasPolicy(ClaimsPrincipal user, string policy)
             => HasClaims(user, _policies[policy]);
 
         private static bool HasClaims(ClaimsPrincipal user, IDictionary<string, string> claims)
-            => claims.All(claim => user.HasClaim(claim.Key, claim.Value));
+            => claims?.All(claim => user.HasClaim(claim.Key, claim.Value)) == true;
     }
 }

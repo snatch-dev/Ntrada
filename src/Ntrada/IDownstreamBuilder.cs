@@ -4,7 +4,7 @@ using Ntrada.Core;
 
 namespace Ntrada
 {
-    public interface IDownstreamBuilder
+    internal interface IDownstreamBuilder
     {
         string GetDownstream(RouteConfig routeConfig, HttpRequest request, RouteData data);
     }

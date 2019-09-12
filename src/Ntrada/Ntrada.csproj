@@ -4,7 +4,6 @@
     <Description>Ntrada API Gateway.</Description>
     <VersionPrefix>1.2.4</VersionPrefix>
     <Authors>Piotr Gankiewicz</Authors>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <Title>Ntrada_</Title>
     <PackageId>Ntrada_</PackageId>
     <PackageTags>Ntrada_</PackageTags>
@@ -13,12 +12,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Jaeger" Version="0.3.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.2.0" />
@@ -28,12 +26,14 @@
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="2.2.0" />
     <PackageReference Include="NJsonSchema" Version="9.13.15" />
     <PackageReference Include="NJsonSchema.Yaml" Version="9.13.15" />
-    <PackageReference Include="SharpYaml" Version="1.6.5" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
     <PackageReference Include="YamlDotNet" Version="6.1.2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Cors\Ntrada.Extensions.Cors.csproj" />
+    <ProjectReference Include="..\..\extensions\Ntrada.Extensions.CustomErrors\Ntrada.Extensions.CustomErrors.csproj" />
+    <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Tracing\Ntrada.Extensions.Tracing.csproj" />
     <ProjectReference Include="..\Ntrada.Core\Ntrada.Core.csproj" />
     <ProjectReference Include="..\..\extensions\Ntrada.Extensions.RabbitMq\Ntrada.Extensions.RabbitMq.csproj" />
     <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Jwt\Ntrada.Extensions.Jwt.csproj" />

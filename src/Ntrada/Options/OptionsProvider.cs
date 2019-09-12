@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Ntrada.Core;
 
-namespace Ntrada
+namespace Ntrada.Options
 {
-    public class OptionsProvider : IOptionsProvider
+    internal class OptionsProvider : IOptionsProvider
     {
         private readonly IConfiguration _configuration;
 

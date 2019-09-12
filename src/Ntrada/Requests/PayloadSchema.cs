@@ -1,8 +1,8 @@
 using System.Dynamic;
 
-namespace Ntrada
+namespace Ntrada.Requests
 {
-    public class PayloadSchema
+    internal class PayloadSchema
     {
         public ExpandoObject Payload { get; }
         public string Schema { get; }

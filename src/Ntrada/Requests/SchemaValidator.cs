@@ -6,7 +6,7 @@ using Ntrada.Core;
 
 namespace Ntrada.Requests
 {
-    public class SchemaValidator : ISchemaValidator
+    internal sealed class SchemaValidator : ISchemaValidator
     {
         public async Task<IEnumerable<Error>> ValidateAsync(string payload, string schema)
         {

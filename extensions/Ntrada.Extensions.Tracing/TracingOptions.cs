@@ -1,8 +1,10 @@
-namespace Ntrada.Tracing
+using Ntrada.Core;
+
+namespace Ntrada.Extensions.Tracing
 {
-    public class JaegerOptions
+    public class TracingOptions : IOptions
     {
-        public bool Enabled { get; set; }
+        public bool UseEmptyTracer { get; set; }
         public string ServiceName { get; set; }
         public string UdpHost { get; set; }
         public int UdpPort { get; set; }

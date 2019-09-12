@@ -1,8 +1,8 @@
 using Ntrada.Core;
 
-namespace Ntrada
+namespace Ntrada.Extensions
 {
-    internal class EnabledExtension : IEnabledExtension
+    internal sealed class EnabledExtension : IEnabledExtension
     {
         public IExtension Extension { get; }
         public IExtensionOptions Options { get; }

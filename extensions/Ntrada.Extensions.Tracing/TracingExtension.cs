@@ -3,34 +3,29 @@ using Jaeger.Reporters;
 using Jaeger.Samplers;
 using Jaeger.Senders;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Ntrada.Core;
 using OpenTracing;
 using OpenTracing.Util;
 
-namespace Ntrada.Tracing
+namespace Ntrada.Extensions.Tracing
 {
-    public static class Extensions
+    public class TracingExtension : IExtension
     {
-        private const string SectionName = "jaeger";
-        private const string RegistryName = "tracing.jaeger";
-
-        public static IServiceCollection AddJaeger(this IServiceCollection services)
+        public string Name => "tracing";
+        public string Description => "Open Tracing using Jaeger";
+        
+        public void Add(IServiceCollection services, IOptionsProvider optionsProvider)
         {
-            var options = new JaegerOptions();
-            using (var scope = services.BuildServiceProvider())
-            {
-                var configuration = scope.GetService<IConfiguration>();
-                configuration.GetSection("jaeger").Bind(options);
-            }
-            
+            var options = optionsProvider.GetForExtension<TracingOptions>("tracing");
+            services.AddOpenTracing();
             services.AddSingleton(options);
-            if (!options.Enabled)
+            if (options.UseEmptyTracer)
             {
                 var defaultTracer = DefaultTracer.Create();
                 services.AddSingleton(defaultTracer);
-                return services;
+                return;
             }
 
             services.AddSingleton<ITracer>(sp =>
@@ -54,22 +49,14 @@ namespace Ntrada.Tracing
 
                 return tracer;
             });
-
-            return services;
         }
-        
-        public static IApplicationBuilder UseJaeger(this IApplicationBuilder app)
+
+        public void Use(IApplicationBuilder app, IOptionsProvider optionsProvider)
         {
-            JaegerOptions options;
-            using (var scope = app.ApplicationServices.CreateScope())
-            {
-                options = scope.ServiceProvider.GetService<JaegerOptions>();
-            }
-
-            return options.Enabled ? app.UseMiddleware<JaegerHttpMiddleware>() : app;
+            app.UseMiddleware<JaegerHttpMiddleware>();
         }
 
-        private static ISampler GetSampler(JaegerOptions options)
+        private static ISampler GetSampler(TracingOptions options)
         {
             switch (options.Sampler)
             {

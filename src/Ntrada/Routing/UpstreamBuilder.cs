@@ -1,19 +1,20 @@
 using Microsoft.Extensions.Logging;
 using Ntrada.Core;
 using Ntrada.Core.Configuration;
+using Ntrada.Options;
 
 namespace Ntrada.Routing
 {
-    public class UpstreamBuilder : IUpstreamBuilder
+    internal sealed class UpstreamBuilder : IUpstreamBuilder
     {
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
         private readonly IRequestHandlerManager _requestHandlerManager;
         private readonly ILogger<UpstreamBuilder> _logger;
 
-        public UpstreamBuilder(NtradaConfiguration configuration, IRequestHandlerManager requestHandlerManager,
+        public UpstreamBuilder(NtradaOptions options, IRequestHandlerManager requestHandlerManager,
             ILogger<UpstreamBuilder> logger)
         {
-            _configuration = configuration;
+            _options = options;
             _requestHandlerManager = requestHandlerManager;
             _logger = logger;
         }
@@ -44,11 +45,11 @@ namespace Ntrada.Routing
 
             var handler = _requestHandlerManager.Get(route.Use);
             var routeInfo = handler.GetInfo(route);
-            var isProtectedInfo = _configuration.Auth is null || !_configuration.Auth.Global && route.Auth is null ||
-                                  route.Auth == false
+            var isPublicInfo = _options.Auth is null || !_options.Auth.Global && route.Auth is null ||
+                               route.Auth == false
                 ? "public"
                 : "protected";
-            _logger.LogInformation($"Added {isProtectedInfo} route for upstream: [{route.Method.ToUpperInvariant()}]" +
+            _logger.LogInformation($"Added {isPublicInfo} route for upstream: [{route.Method.ToUpperInvariant()}]" +
                                    $"'{upstream}' -> {routeInfo}");
 
             return upstream;

@@ -13,12 +13,13 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Ntrada.Core;
-using Ntrada.Hooks;
+using Ntrada.Core.Hooks;
+using Ntrada.Options;
 using Route = Ntrada.Core.Configuration.Route;
 
 namespace Ntrada.Handlers
 {
-    public class DownstreamHandler : IHandler
+    internal sealed class DownstreamHandler : IHandler
     {
         private static readonly string TransformationToken = "^";
         private static readonly string ContentTypeApplicationJson = "application/json";
@@ -28,19 +29,19 @@ namespace Ntrada.Handlers
         private readonly IServiceProvider _serviceProvider;
         private readonly IRequestProcessor _requestProcessor;
         private readonly IPayloadValidator _payloadValidator;
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
         private readonly ILogger<DownstreamHandler> _logger;
-        private readonly IBeforeHttpClientRequestHook _beforeHttpClientRequestHook;
+        private readonly IEnumerable<IBeforeHttpClientRequestHook> _beforeHttpClientRequestHooks;
 
         public DownstreamHandler(IServiceProvider serviceProvider, IRequestProcessor requestProcessor,
-            IPayloadValidator payloadValidator, NtradaConfiguration configuration, ILogger<DownstreamHandler> logger)
+            IPayloadValidator payloadValidator, NtradaOptions options, ILogger<DownstreamHandler> logger)
         {
             _serviceProvider = serviceProvider;
             _requestProcessor = requestProcessor;
             _payloadValidator = payloadValidator;
-            _configuration = configuration;
+            _options = options;
             _logger = logger;
-            _beforeHttpClientRequestHook = _serviceProvider.GetService<IBeforeHttpClientRequestHook>();
+            _beforeHttpClientRequestHooks = _serviceProvider.GetServices<IBeforeHttpClientRequestHook>();
         }
 
         public string GetInfo(Route route) =>
@@ -86,7 +87,7 @@ namespace Ntrada.Handlers
                 .ToLowerInvariant();
 
             if (executionData.Route.ForwardRequestHeaders == true ||
-                (_configuration.ForwardRequestHeaders == true && executionData.Route.ForwardRequestHeaders != false))
+                (_options.ForwardRequestHeaders == true && executionData.Route.ForwardRequestHeaders != false))
             {
                 foreach (var header in executionData.Request.Headers)
                 {
@@ -96,7 +97,7 @@ namespace Ntrada.Handlers
 
             var requestHeaders = executionData.Route.RequestHeaders is null ||
                                  !executionData.Route.RequestHeaders.Any()
-                ? _configuration.RequestHeaders ?? new Dictionary<string, string>()
+                ? _options.RequestHeaders ?? new Dictionary<string, string>()
                 : executionData.Route.RequestHeaders;
             foreach (var header in requestHeaders)
             {
@@ -114,7 +115,13 @@ namespace Ntrada.Handlers
                 httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, values.ToArray());
             }
 
-            _beforeHttpClientRequestHook?.Invoke(httpClient, executionData);
+            if (!(_beforeHttpClientRequestHooks is null))
+            {
+                foreach (var hook in _beforeHttpClientRequestHooks)
+                {
+                    hook?.Invoke(httpClient, executionData);
+                }
+            }
 
             switch (method)
             {
@@ -128,14 +135,18 @@ namespace Ntrada.Handlers
                     return () =>
                     {
                         var url = executionData.Downstream;
-                        var payload = GetPayload(executionData.Payload, executionData.ContentType);
+                        var payload = executionData.IsCustomPayload
+                            ? GetPayload(executionData.Payload, executionData.ContentType)
+                            : new StreamContent(executionData.Request.Body);
                         return httpClient.PostAsync(url, payload);
                     };
                 case "put":
                     return () =>
                     {
                         var url = executionData.Downstream;
-                        var payload = GetPayload(executionData.Payload, executionData.ContentType);
+                        var payload = executionData.IsCustomPayload
+                            ? GetPayload(executionData.Payload, executionData.ContentType)
+                            : new StreamContent(executionData.Request.Body);
                         return httpClient.PutAsync(url, payload);
                     };
                 case "delete":
@@ -149,7 +160,7 @@ namespace Ntrada.Handlers
             }
         }
 
-        private static StringContent GetPayload(object data, string contentType)
+        private static HttpContent GetPayload(object data, string contentType)
         {
             if (data is null || string.IsNullOrWhiteSpace(contentType))
             {
@@ -221,7 +232,7 @@ namespace Ntrada.Handlers
             const string responseDataKey = "response.data";
             var content = await httpResponse.Content.ReadAsStringAsync();
             var onSuccess = executionData.Route.OnSuccess;
-            if (_configuration.ForwardStatusCode == false || executionData.Route.ForwardStatusCode == false)
+            if (_options.ForwardStatusCode == false || executionData.Route.ForwardStatusCode == false)
             {
                 response.StatusCode = 200;
             }
@@ -231,7 +242,7 @@ namespace Ntrada.Handlers
             }
 
             if (executionData.Route.ForwardResponseHeaders == true ||
-                (_configuration.ForwardResponseHeaders == true && executionData.Route.ForwardResponseHeaders != false))
+                (_options.ForwardResponseHeaders == true && executionData.Route.ForwardResponseHeaders != false))
             {
                 foreach (var header in httpResponse.Headers)
                 {
@@ -251,7 +262,7 @@ namespace Ntrada.Handlers
 
             var responseHeaders = executionData.Route.ResponseHeaders is null ||
                                   !executionData.Route.ResponseHeaders.Any()
-                ? _configuration.ResponseHeaders ?? new Dictionary<string, string>()
+                ? _options.ResponseHeaders ?? new Dictionary<string, string>()
                 : executionData.Route.ResponseHeaders;
             foreach (var header in responseHeaders)
             {

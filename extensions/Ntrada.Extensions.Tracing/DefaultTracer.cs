@@ -4,7 +4,7 @@ using Jaeger.Reporters;
 using Jaeger.Samplers;
 using OpenTracing;
 
-namespace Ntrada.Tracing
+namespace Ntrada.Extensions.Tracing
 {
     public class DefaultTracer
     {

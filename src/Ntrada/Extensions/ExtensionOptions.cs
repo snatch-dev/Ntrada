@@ -1,4 +1,4 @@
-namespace Ntrada
+namespace Ntrada.Extensions
 {
     public class ExtensionOptions : IExtensionOptions
     {

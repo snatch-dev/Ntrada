@@ -8,7 +8,7 @@ using Ntrada.Core;
 
 namespace Ntrada.Requests
 {
-    public class RequestHandlerManager : IRequestHandlerManager
+    internal sealed class RequestHandlerManager : IRequestHandlerManager
     {
         private readonly ILogger<IRequestHandlerManager> _logger;
 

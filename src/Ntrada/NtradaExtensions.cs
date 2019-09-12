@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -11,14 +9,12 @@ using Newtonsoft.Json;
 using Ntrada.Auth;
 using Ntrada.Core;
 using Ntrada.Core.Configuration;
+using Ntrada.Extensions;
 using Ntrada.Handlers;
-using Ntrada.Middleware;
+using Ntrada.Options;
 using Ntrada.Requests;
 using Ntrada.Routing;
-using Ntrada.Tracing;
 using Polly;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace Ntrada
 {
@@ -34,38 +30,45 @@ namespace Ntrada
  /___ API Gateway (Entrance) ___/";
 
 
-        public static IServiceCollection AddNtrada(this IServiceCollection services, Action<INtradaConfigurator> ntrada = null)
+        public static IServiceCollection AddNtrada(this IServiceCollection services)
         {
-            IConfiguration cfg = null;
+            var (configuration, optionsProvider) = BuildConfiguration(services);
+            
+            return services.AddCoreServices()
+                .ConfigureLogging(configuration)
+                .ConfigureHttpClient(configuration)
+                .ConfigurePayloads(configuration)
+                .AddNtradaServices()
+                .AddExtensions(optionsProvider);
+        }
+
+        private static (NtradaOptions, OptionsProvider) BuildConfiguration(IServiceCollection services)
+        {
+            IConfiguration config;
             using (var scope = services.BuildServiceProvider().CreateScope())
             {
-                cfg = scope.ServiceProvider.GetService<IConfiguration>();
+                config = scope.ServiceProvider.GetService<IConfiguration>();
             }
             
-            var optionsProvider = new OptionsProvider(cfg);
+            var optionsProvider = new OptionsProvider(config);
             services.AddSingleton<IOptionsProvider>(optionsProvider);
-            
-            var configuration = optionsProvider.Get<NtradaConfiguration>();
-            var authenticationConfig = configuration.Auth;
-            var cors = configuration?.Cors;
-            var useCors = cors?.Enabled == true;
-            var useErrorHandler = configuration.UseErrorHandler;
-            var http = configuration.Http ?? new Http();
-            if (configuration.PayloadsFolder is null)
-            {
-                configuration.PayloadsFolder = "Payloads";
-            }
-
-            if (configuration.PayloadsFolder.EndsWith("/"))
-            {
-                configuration.PayloadsFolder = configuration.PayloadsFolder
-                    .Substring(0, configuration.PayloadsFolder.Length - 1);
-            }
-
+            var configuration = optionsProvider.Get<NtradaOptions>();
             services.AddSingleton(configuration);
+
+            return (configuration, optionsProvider);
+        }
+
+        private static IServiceCollection AddCoreServices(this IServiceCollection services)
+        {
             services.AddMvcCore()
                 .AddJsonFormatters()
                 .AddJsonOptions(o => o.SerializerSettings.Formatting = Formatting.Indented);
+            
+            return services;
+        }
+        
+        private static IServiceCollection ConfigureLogging(this IServiceCollection services, NtradaOptions options)
+        {
             services.AddLogging(
                 builder =>
                 {
@@ -73,8 +76,13 @@ namespace Ntrada
                         .AddFilter("System", LogLevel.Warning)
                         .AddConsole();
                 });
-            services.AddJaeger();
+            
+            return services;
+        }
 
+        private static IServiceCollection ConfigureHttpClient(this IServiceCollection services, NtradaOptions options)
+        {
+            var http = options.Http ?? new Http();
             var httpClientBuilder = services.AddHttpClient("ntrada");
             httpClientBuilder.AddTransientHttpErrorPolicy(p =>
                 p.WaitAndRetryAsync(http.Retries, retryAttempt =>
@@ -86,29 +94,27 @@ namespace Ntrada
                     return TimeSpan.FromSeconds(interval);
                 }));
             
-            var ntradaBuilder = new NtradaConfigurator(httpClientBuilder);
-            ntrada?.Invoke(ntradaBuilder);
+            return services;
+        }
 
-            if (useErrorHandler)
+        private static IServiceCollection ConfigurePayloads(this IServiceCollection services, NtradaOptions options)
+        {
+            if (options.PayloadsFolder is null)
             {
-                services.AddTransient<ErrorHandlerMiddleware>();
+                options.PayloadsFolder = "Payloads";
             }
 
-            if (useCors)
+            if (options.PayloadsFolder.EndsWith("/"))
             {
-                services.AddCors(options =>
-                {
-                    var headers = cors?.Headers ?? Enumerable.Empty<string>();
-                    options.AddPolicy("CorsPolicy", builder =>
-                    {
-                        builder.AllowAnyOrigin()
-                            .AllowAnyMethod()
-                            .AllowAnyHeader()
-                            .WithExposedHeaders(headers.ToArray());
-                    });
-                });
+                options.PayloadsFolder = options.PayloadsFolder
+                    .Substring(0, options.PayloadsFolder.Length - 1);
             }
+            
+            return services;
+        }
 
+        private static IServiceCollection AddNtradaServices(this IServiceCollection services)
+        {
             services.AddSingleton<IAccessValidator, AccessValidator>();
             services.AddSingleton<IDownstreamBuilder, DownstreamBuilder>();
             services.AddSingleton<IPayloadBuilder, PayloadBuilder>();
@@ -125,6 +131,12 @@ namespace Ntrada
             services.AddSingleton<DownstreamHandler>();
             services.AddSingleton<ReturnValueHandler>();
             
+            return services;
+        }
+        
+        private static IServiceCollection AddExtensions(this IServiceCollection services, IOptionsProvider optionsProvider)
+        {
+            var configuration = optionsProvider.Get<NtradaOptions>();
             var extensionProvider = new ExtensionProvider(configuration);
             services.AddSingleton<IExtensionProvider>(extensionProvider);
             
@@ -144,65 +156,39 @@ namespace Ntrada
         public static IApplicationBuilder UseNtrada(this IApplicationBuilder app)
         {
             var newLine = Environment.NewLine;
-            Console.WriteLine($"{newLine}{newLine}{Logo}{newLine}{newLine}");
-            var configuration = app.ApplicationServices.GetRequiredService<NtradaConfiguration>();
-            var authenticationConfig = configuration.Auth;
-            var authenticationEnabled = authenticationConfig?.Enabled == true;
-            var useForwardedHeaders = configuration.UseForwardedHeaders;
-            var cors = configuration?.Cors;
-            var useCors = cors?.Enabled == true;
-            var useErrorHandler = configuration.UseErrorHandler;
-            var useJaeger = configuration.UseJaeger;
-            var http = configuration.Http ?? new Http();
-            if (useErrorHandler)
+            var logger = app.ApplicationServices.GetRequiredService<ILogger<Ntrada>>();
+            logger.LogInformation($"{newLine}{newLine}{Logo}{newLine}{newLine}");
+            var configuration = app.ApplicationServices.GetRequiredService<NtradaOptions>();
+            if (configuration.Auth?.Enabled == true)
             {
-                app.UseMiddleware<ErrorHandlerMiddleware>();
-            }
-
-            if (useJaeger)
-            {
-                app.UseJaeger();
-            }
-
-            if (useCors)
-            {
-                app.UseCors("CorsPolicy");
-            }
-
-            if (authenticationEnabled)
-            {
+                logger.LogInformation($"Authentication is enabled.");
                 app.UseAuthentication();
             }
-
-            if (useForwardedHeaders)
+            else
             {
+                logger.LogInformation($"Authentication is disabled.");
+            }
+
+            if (configuration.UseForwardedHeaders)
+            {
+                logger.LogInformation("Enabled headers forwarding.");
                 app.UseForwardedHeaders(new ForwardedHeadersOptions
                 {
                     ForwardedHeaders = ForwardedHeaders.All
                 });
             }
             
-            var optionsProvider = app.ApplicationServices.GetRequiredService<IOptionsProvider>();
-            var extensionProvider = app.ApplicationServices.GetRequiredService<IExtensionProvider>();
-            foreach (var extension in extensionProvider.GetAll())
-            {
-                if (extension.Options.Enabled == false)
-                {
-                    continue;
-                }
-                
-                extension.Extension.Use(app, optionsProvider);
-            }
+            app.RegisterRequestHandlers();
+            app.AddRoutes();
+            app.UseExtensions();
 
-            foreach (var route in configuration.Modules.SelectMany(m => m.Value.Routes))
-            {
-                route.Method =
-                    (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
-                route.DownstreamMethod =
-                    (string.IsNullOrWhiteSpace(route.DownstreamMethod) ? route.Method : route.DownstreamMethod)
-                    .ToLowerInvariant();
-            }
+            return app;
+        }
 
+        private static void RegisterRequestHandlers(this IApplicationBuilder app)
+        {
+            var logger = app.ApplicationServices.GetRequiredService<ILogger<Ntrada>>();
+            var configuration = app.ApplicationServices.GetRequiredService<NtradaOptions>();
             var requestHandlerManager = app.ApplicationServices.GetRequiredService<IRequestHandlerManager>();
             requestHandlerManager.AddHandler("downstream",
                 app.ApplicationServices.GetRequiredService<DownstreamHandler>());
@@ -220,14 +206,49 @@ namespace Ntrada
             {
                 if (requestHandlerManager.Get(handler) is null)
                 {
-                    throw new Exception($"Handler '{handler}' was not defined.");
+                    throw new Exception($"Handler: '{handler}' was not defined.");
                 }
+                
+                logger.LogInformation($"Added handler: ''{handler}''");
+            }
+        }
+
+        private static void AddRoutes(this IApplicationBuilder app)
+        {
+            var configuration = app.ApplicationServices.GetRequiredService<NtradaOptions>();
+            foreach (var route in configuration.Modules.SelectMany(m => m.Value.Routes))
+            {
+                route.Method =
+                    (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
+                route.DownstreamMethod =
+                    (string.IsNullOrWhiteSpace(route.DownstreamMethod) ? route.Method : route.DownstreamMethod)
+                    .ToLowerInvariant();
             }
 
             var routeProvider = app.ApplicationServices.GetRequiredService<IRouteProvider>();
             app.UseRouter(routeProvider.Build());
+        }
+        
+        private static void UseExtensions(this IApplicationBuilder app)
+        {
+            var logger = app.ApplicationServices.GetRequiredService<ILogger<Ntrada>>();
+            var optionsProvider = app.ApplicationServices.GetRequiredService<IOptionsProvider>();
+            var extensionProvider = app.ApplicationServices.GetRequiredService<IExtensionProvider>();
+            foreach (var extension in extensionProvider.GetAll())
+            {
+                if (extension.Options.Enabled == false)
+                {
+                    continue;
+                }
+                
+                extension.Extension.Use(app, optionsProvider);
+                logger.LogInformation($"Enabled extension: '{extension.Extension.Name}' " +
+                                      $"({extension.Extension.Description}) [order: {extension.Options.Order}]");
+            }
+        }
 
-            return app;
+        private class Ntrada
+        {
         }
     }
 }

@@ -2,17 +2,18 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Ntrada.Core;
+using Ntrada.Options;
 
 namespace Ntrada.Routing
 {
-    public class DownstreamBuilder : IDownstreamBuilder
+    internal sealed class DownstreamBuilder : IDownstreamBuilder
     {
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
         private readonly IValueProvider _valueProvider;
 
-        public DownstreamBuilder(NtradaConfiguration configuration, IValueProvider valueProvider)
+        public DownstreamBuilder(NtradaOptions options, IValueProvider valueProvider)
         {
-            _configuration = configuration;
+            _options = options;
             _valueProvider = valueProvider;
         }
         
@@ -40,7 +41,7 @@ namespace Ntrada.Routing
                 stringBuilder.Replace($"{{{value.Key}}}", value.Value.ToString());
             }
 
-            if (_configuration.PassQueryString == false || routeConfig.Route.PassQueryString == false)
+            if (_options.PassQueryString == false || routeConfig.Route.PassQueryString == false)
             {
                 return stringBuilder.ToString();
             }

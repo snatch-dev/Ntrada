@@ -6,26 +6,43 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json;
+using Ntrada.Core;
+using Ntrada.Options;
 using Route = Ntrada.Core.Configuration.Route;
 
 namespace Ntrada.Requests
 {
-    public class PayloadBuilder : IPayloadBuilder
+    internal sealed class PayloadBuilder : IPayloadBuilder
     {
         private static readonly string EmptyContent = "{}";
         private static readonly string ResourceIdProperty = "id";
-        private readonly NtradaConfiguration _configuration;
+        private readonly NtradaOptions _options;
         private readonly IPayloadManager _payloadManager;
         private readonly IValueProvider _valueProvider;
         private readonly IDictionary<string, PayloadSchema> _payloads;
 
-        public PayloadBuilder(NtradaConfiguration configuration, IPayloadManager payloadManager,
+        public PayloadBuilder(NtradaOptions options, IPayloadManager payloadManager,
             IValueProvider valueProvider)
         {
-            _configuration = configuration;
+            _options = options;
             _payloadManager = payloadManager;
             _valueProvider = valueProvider;
             _payloads = payloadManager.Payloads;
+        }
+
+        public bool IsCustom(string resourceId, Route route)
+        {
+            if (!string.IsNullOrWhiteSpace(resourceId))
+            {
+                return true;
+            }
+
+            if (route.Bind.IsNotEmpty())
+            {
+                return true;
+            }
+            
+            return route.Transform.IsNotEmpty() || _payloads.ContainsKey(GetPayloadKey(route));
         }
 
         public async Task<PayloadSchema> BuildAsync(string resourceId, Route route, HttpRequest request, RouteData data)
@@ -53,7 +70,7 @@ namespace Ntrada.Requests
             if (!string.IsNullOrWhiteSpace(resourceId))
             {
                 var resourceIdProperty = string.IsNullOrWhiteSpace(route.ResourceId?.Property)
-                    ? _configuration.ResourceId.Property
+                    ? _options.ResourceId.Property
                     : route.ResourceId?.Property;
                 if (string.IsNullOrWhiteSpace(resourceIdProperty))
                 {
