@@ -24,7 +24,7 @@ namespace Ntrada.Routing
             RouteConfig routeConfig)
         {
             var traceId = request.HttpContext.TraceIdentifier;
-            var isAuthenticated = await _authenticationManager.IsAuthenticatedAsync(request, routeConfig);
+            var isAuthenticated = await _authenticationManager.TryAuthenticateAsync(request, routeConfig);
             if (!isAuthenticated)
             {
                 _logger.LogWarning($"Unauthorized request to: {routeConfig.Route.Upstream} [Trace ID: {traceId}]");

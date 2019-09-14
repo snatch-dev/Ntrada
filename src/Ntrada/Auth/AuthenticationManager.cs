@@ -16,10 +16,10 @@ namespace Ntrada.Auth
         }
 
 
-        public async Task<bool> IsAuthenticatedAsync(HttpRequest request, RouteConfig routeConfig)
+        public async Task<bool> TryAuthenticateAsync(HttpRequest request, RouteConfig routeConfig)
         {
-            if (_options.Auth?.Global != true
-                || routeConfig.Route.Auth.HasValue && routeConfig.Route.Auth == false)
+            if (_options.Auth is null || !_options.Auth.Enabled || _options.Auth?.Global != true &&
+                routeConfig.Route?.Auth != true)
             {
                 return true;
             }

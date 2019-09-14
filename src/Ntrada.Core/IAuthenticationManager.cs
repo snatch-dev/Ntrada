@@ -5,6 +5,6 @@ namespace Ntrada.Core
 {
     public interface IAuthenticationManager
     {
-        Task<bool> IsAuthenticatedAsync(HttpRequest request, RouteConfig routeConfig);
+        Task<bool> TryAuthenticateAsync(HttpRequest request, RouteConfig routeConfig);
     }
 }
