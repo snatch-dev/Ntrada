@@ -32,7 +32,9 @@ namespace Ntrada.Extensions.RabbitMq
                     RequestedFrameMax = options.RequestedFrameMax,
                     RequestedHeartbeat = options.RequestedHeartbeat,
                     UseBackgroundThreadsForIO = options.UseBackgroundThreadsForIO,
-                    Ssl = new SslOption(options.Ssl.ServerName, options.Ssl.CertificatePath, options.Ssl.Enabled),
+                    Ssl = options.Ssl is null
+                        ? new SslOption()
+                        : new SslOption(options.Ssl.ServerName, options.Ssl.CertificatePath, options.Ssl.Enabled),
                 };
 
                 return connectionFactory.CreateConnection();

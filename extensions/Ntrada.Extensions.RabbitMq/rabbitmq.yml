@@ -8,3 +8,8 @@ rabbitmq:
   socketReadTimeout: 3000
   socketWriteTimeout: 3000
   requestedHeartbeat: 60
+  exchange:
+    declareExchange: true
+    durable: true
+    autoDelete: false
+    type: "topic"

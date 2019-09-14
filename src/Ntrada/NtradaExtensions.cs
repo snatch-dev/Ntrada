@@ -182,9 +182,9 @@ namespace Ntrada
                 });
             }
             
+            app.UseExtensions();
             app.RegisterRequestHandlers();
             app.AddRoutes();
-            app.UseExtensions();
 
             return app;
         }

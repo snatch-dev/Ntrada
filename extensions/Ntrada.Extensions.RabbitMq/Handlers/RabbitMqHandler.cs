@@ -7,7 +7,7 @@ using Route = Ntrada.Core.Configuration.Route;
 
 namespace Ntrada.Extensions.RabbitMq.Handlers
 {
-    internal sealed class RabbitMqHandler : IHandler
+    public sealed class RabbitMqHandler : IHandler
     {
         private readonly IRabbitMqClient _rabbitMqClient;
         private readonly IRequestProcessor _requestProcessor;

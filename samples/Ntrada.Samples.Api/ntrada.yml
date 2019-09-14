@@ -54,28 +54,21 @@ extensions:
     validate_lifetime: true
     
   rabbitmq:
-    enabled: false
+    enabled: true
+    hostname: localhost
+    port: 5672
+    virtualHost: "/"
     username: guest
     password: guest
-    virtualHost: "/"
-    port: 5672
-    hostnames:
-      - localhost
-    requestTimeout: '00:00:10'
-    publishConfirmTimeout: '00:00:01'
-    recoveryInterval: '00:00:10'
-    persistentDeliveryMode: true
-    autoCloseConnection: true
-    automaticRecovery: true
-    topologyRecovery: true
+    requestedConnectionTimeout: 3000
+    socketReadTimeout: 3000
+    socketWriteTimeout: 3000
+    requestedHeartbeat: 60
     exchange:
+      declareExchange: true
       durable: true
       autoDelete: false
-      type: Topic
-    queue:
-      autoDelete: false
-      durable: true
-      exclusive: false
+      type: "topic"
 
   tracing:
     serviceName: ntrada
@@ -92,3 +85,13 @@ modules:
         method: GET
         use: return_value
         returnValue: Welcome to Ntrada API!
+        
+      - upstream: /
+        method: POST
+        auth: false
+        use: rabbitmq
+        config:
+          exchange: sample.exchange
+          routing_key: sample.routing.key
+          type: "topic"
+

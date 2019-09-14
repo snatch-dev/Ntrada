@@ -16,6 +16,7 @@ namespace Ntrada.Extensions.RabbitMq
         public uint RequestedFrameMax { get; set; }
         public ushort RequestedHeartbeat { get; set; }
         public bool UseBackgroundThreadsForIO { get; set; }
+        public RabbitMqExchangeOptions Exchange { get; set; }
         public RabbitMqSslOptions Ssl { get; set; }
 
         public class RabbitMqSslOptions
@@ -23,6 +24,14 @@ namespace Ntrada.Extensions.RabbitMq
             public bool Enabled { get; set; }
             public string ServerName { get; set; }
             public string CertificatePath { get; set; }
+        }
+
+        public class RabbitMqExchangeOptions
+        {
+            public bool DeclareExchange { get; set; }
+            public bool Durable { get; set; }
+            public bool AutoDelete { get; set; }
+            public string Type { get; set; }
         }
     }
 }
