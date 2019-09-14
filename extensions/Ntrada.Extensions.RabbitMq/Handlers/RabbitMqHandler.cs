@@ -5,15 +5,21 @@ using Microsoft.Extensions.Logging;
 using Ntrada.Core;
 using Route = Ntrada.Core.Configuration.Route;
 
-namespace Ntrada.Extensions.RabbitMq
+namespace Ntrada.Extensions.RabbitMq.Handlers
 {
-    public class RabbitMqHandler : IHandler
+    internal sealed class RabbitMqHandler : IHandler
     {
         private readonly IRabbitMqClient _rabbitMqClient;
         private readonly IRequestProcessor _requestProcessor;
         private readonly IPayloadValidator _payloadValidator;
         private readonly IContextBuilder _contextBuilder;
         private readonly ILogger<RabbitMqHandler> _logger;
+
+        private const string RequestIdHeader = "Request-ID";
+        private const string ResourceIdHeader = "Resource-ID";
+        private const string TraceIdHeader = "Trace-ID";
+        private const string ConfigRoutingKey = "routing_key";
+        private const string ConfigExchange = "exchange";
 
         public RabbitMqHandler(IRabbitMqClient rabbitMqClient, IRequestProcessor requestProcessor,
             IPayloadValidator payloadValidator, IContextBuilder contextBuilder, ILogger<RabbitMqHandler> logger)
@@ -38,8 +44,8 @@ namespace Ntrada.Extensions.RabbitMq
 
             var traceId = request.HttpContext.TraceIdentifier;
             var config = executionData.Route.Config;
-            var routingKey = config["routing_key"];
-            var exchange = config["exchange"];
+            var routingKey = config[ConfigRoutingKey];
+            var exchange = config[ConfigExchange];
             var message = executionData.Payload;
             var context = _contextBuilder.Build(executionData);
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
@@ -51,17 +57,15 @@ namespace Ntrada.Extensions.RabbitMq
             
             if (!string.IsNullOrWhiteSpace(executionData.RequestId))
             {
-                response.Headers.Add("Request-ID", executionData.RequestId);
+                response.Headers.Add(RequestIdHeader, executionData.RequestId);
             }
-
-            if (!string.IsNullOrWhiteSpace(executionData.ResourceId) && executionData.Route.Method == "post")
+            if (!string.IsNullOrWhiteSpace(executionData.ResourceId) && executionData.Route.Method is "post")
             {
-                response.Headers.Add("Resource-ID", executionData.ResourceId);
+                response.Headers.Add(ResourceIdHeader, executionData.ResourceId);
             }
-
             if (hasTraceId)
             {
-                response.Headers.Add("Trace-ID", traceId);
+                response.Headers.Add(TraceIdHeader, traceId);
             }
 
             response.StatusCode = 202;

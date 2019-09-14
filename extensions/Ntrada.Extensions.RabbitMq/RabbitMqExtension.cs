@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Ntrada.Core;
+using Ntrada.Extensions.RabbitMq.Clients;
+using Ntrada.Extensions.RabbitMq.Contexts;
+using Ntrada.Extensions.RabbitMq.Handlers;
 using RabbitMQ.Client;
 
 namespace Ntrada.Extensions.RabbitMq

@@ -2,9 +2,9 @@ using System.Text;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 
-namespace Ntrada.Extensions.RabbitMq
+namespace Ntrada.Extensions.RabbitMq.Clients
 {
-    public class RabbitMqClient : IRabbitMqClient
+    internal sealed class RabbitMqClient : IRabbitMqClient
     {
         private readonly IConnection _connection;
         private const string MessageContextHeader = "message_context";

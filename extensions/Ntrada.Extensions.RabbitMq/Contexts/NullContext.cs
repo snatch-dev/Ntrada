@@ -1,4 +1,4 @@
-namespace Ntrada.Extensions.RabbitMq
+namespace Ntrada.Extensions.RabbitMq.Contexts
 {
     internal sealed class NullContext
     {
