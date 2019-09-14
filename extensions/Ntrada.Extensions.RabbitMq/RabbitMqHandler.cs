@@ -43,9 +43,12 @@ namespace Ntrada.Extensions.RabbitMq
             var message = executionData.Payload;
             var context = _contextBuilder.Build(executionData);
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
+            
             _logger.LogInformation($"Sending a message: {routingKey} to the exchange: {exchange}" +
                                    (hasTraceId ? $" [Trace ID: {traceId}]" : string.Empty));
-            await _rabbitMqClient.SendAsync(message, routingKey, exchange, context);
+            
+            _rabbitMqClient.Send(message, routingKey, exchange, context);
+            
             if (!string.IsNullOrWhiteSpace(executionData.RequestId))
             {
                 response.Headers.Add("Request-ID", executionData.RequestId);

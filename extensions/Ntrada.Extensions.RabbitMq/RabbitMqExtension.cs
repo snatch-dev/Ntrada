@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Ntrada.Core;
-using RawRabbit;
-using RawRabbit.Configuration;
-using RawRabbit.Enrichers.MessageContext;
-using RawRabbit.Instantiation;
+using RabbitMQ.Client;
 
 namespace Ntrada.Extensions.RabbitMq
 {
@@ -15,6 +12,29 @@ namespace Ntrada.Extensions.RabbitMq
         public void Add(IServiceCollection services, IOptionsProvider optionsProvider)
         {
             var options = optionsProvider.GetForExtension<RabbitMqOptions>(Name);
+            services.AddSingleton(options);
+            services.AddSingleton(sp =>
+            {
+                var connectionFactory = new ConnectionFactory
+                {
+                    HostName = options.HostName,
+                    Port = options.Port,
+                    VirtualHost = options.VirtualHost,
+                    UserName = options.Username,
+                    Password = options.Password,
+                    RequestedConnectionTimeout = options.RequestedConnectionTimeout,
+                    SocketReadTimeout = options.SocketReadTimeout,
+                    SocketWriteTimeout = options.SocketWriteTimeout,
+                    RequestedChannelMax = options.RequestedChannelMax,
+                    RequestedFrameMax = options.RequestedFrameMax,
+                    RequestedHeartbeat = options.RequestedHeartbeat,
+                    UseBackgroundThreadsForIO = options.UseBackgroundThreadsForIO,
+                    Ssl = new SslOption(options.Ssl.ServerName, options.Ssl.CertificatePath, options.Ssl.Enabled),
+                };
+
+                return connectionFactory.CreateConnection();
+            });
+            
             services.AddTransient<IRabbitMqClient, RabbitMqClient>();
             services.AddTransient<RabbitMqHandler>();
 //            var hasContext = typeof(TContext) != typeof(NullContext);
@@ -23,28 +43,6 @@ namespace Ntrada.Extensions.RabbitMq
             {
                 services.AddSingleton<IContextBuilder, NullContextBuilder>();
             }
-
-            services.AddSingleton(options);
-            var busClient = RawRabbitFactory.CreateInstanceFactory(new RawRabbitOptions
-            {
-                DependencyInjection = ioc =>
-                {
-                    ioc.AddSingleton(options);
-                    ioc.AddSingleton<RawRabbitConfiguration>(options);
-                },
-                Plugins = plugins =>
-                {
-                    plugins
-                        .UseAttributeRouting()
-                        .UseRetryLater()
-                        .UseContextForwarding();
-//                    if (typeof(TContext) != typeof(NullContext))
-//                    {
-//                        plugins.UseMessageContext<TContext>();
-//                    }
-                }
-            }).Create();
-            services.AddSingleton(busClient);
         }
 
         public void Use(IApplicationBuilder app, IOptionsProvider optionsProvider)

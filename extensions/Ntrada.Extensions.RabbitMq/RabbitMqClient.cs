@@ -1,30 +1,33 @@
-using System.Threading.Tasks;
-using RawRabbit;
-using RawRabbit.Enrichers.MessageContext;
+using System.Text;
+using Newtonsoft.Json;
+using RabbitMQ.Client;
 
 namespace Ntrada.Extensions.RabbitMq
 {
     public class RabbitMqClient : IRabbitMqClient
     {
-        private readonly IBusClient _busClient;
+        private readonly IConnection _connection;
+        private const string MessageContextHeader = "message_context";
 
-        public RabbitMqClient(IBusClient busClient)
-        {
-            _busClient = busClient;
-        }
+        public RabbitMqClient(IConnection connection)
+            => _connection = connection;
 
-        public async Task SendAsync(object message, string routingKey, string exchange, object context = null)
+        public void Send(object message, string routingKey, string exchange, object context = null)
         {
-            if (context is null)
+            using (var channel = _connection.CreateModel())
             {
-                await _busClient.PublishAsync(message, ctx => ctx.UsePublishConfiguration(c =>
-                    c.OnDeclaredExchange(e => e.WithName(exchange)).WithRoutingKey(routingKey)));
-                return;
-            }
+                var json = JsonConvert.SerializeObject(message);
+                var body = Encoding.UTF8.GetBytes(json);
 
-            await _busClient.PublishAsync(message, ctx => ctx.UseMessageContext(context)
-                .UsePublishConfiguration(c =>
-                    c.OnDeclaredExchange(e => e.WithName(exchange)).WithRoutingKey(routingKey)));
+                var properties = channel.CreateBasicProperties();
+
+                if (!(context is null))
+                {
+                    properties.Headers.Add(MessageContextHeader, JsonConvert.SerializeObject(context));
+                }
+                
+                channel.BasicPublish(exchange, routingKey, properties, body);
+            }
         }
     }
 }
