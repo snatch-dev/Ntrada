@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
@@ -14,6 +15,7 @@ using Xunit;
 
 namespace Ntrada.Tests.Unit.Auth
 {
+    [ExcludeFromCodeCoverage]
     public class AuthenticationManagerTests
     {
         [Fact]
@@ -24,6 +26,7 @@ namespace Ntrada.Tests.Unit.Auth
         {
             var result = await Act();
             result.ShouldBeTrue();
+            await _authenticationService.DidNotReceiveWithAnyArgs().AuthenticateAsync(null, null);
         }
 
         [Fact]
@@ -35,6 +38,7 @@ namespace Ntrada.Tests.Unit.Auth
             };
             var result = await Act();
             result.ShouldBeTrue();
+            await _authenticationService.DidNotReceiveWithAnyArgs().AuthenticateAsync(null, null);
         }
 
         [Fact]
@@ -50,6 +54,7 @@ namespace Ntrada.Tests.Unit.Auth
             };
             var result = await Act();
             result.ShouldBeTrue();
+            await _authenticationService.DidNotReceiveWithAnyArgs().AuthenticateAsync(null, null);
         }
 
         [Fact]
@@ -63,6 +68,7 @@ namespace Ntrada.Tests.Unit.Auth
             SetFailedAuth();
             var result = await Act();
             result.ShouldBeFalse();
+            await _authenticationService.Received().AuthenticateAsync(Arg.Any<HttpContext>(), Arg.Any<string>());
         }
 
         [Fact]
@@ -80,6 +86,7 @@ namespace Ntrada.Tests.Unit.Auth
             SetFailedAuth();
             var result = await Act();
             result.ShouldBeFalse();
+            await _authenticationService.Received().AuthenticateAsync(_httpContext, Arg.Any<string>());
         }
         
         [Fact]
@@ -93,6 +100,7 @@ namespace Ntrada.Tests.Unit.Auth
             SetSuccessfulAuth();
             var result = await Act();
             result.ShouldBeTrue();
+            await _authenticationService.Received().AuthenticateAsync(_httpContext, Arg.Any<string>());
         }
 
         [Fact]
@@ -110,6 +118,7 @@ namespace Ntrada.Tests.Unit.Auth
             SetSuccessfulAuth();
             var result = await Act();
             result.ShouldBeTrue();
+            await _authenticationService.Received().AuthenticateAsync(_httpContext, Arg.Any<string>());
         }
 
         #region  Arrange
@@ -119,6 +128,7 @@ namespace Ntrada.Tests.Unit.Auth
         private readonly HttpContext _httpContext;
         private readonly RouteConfig _routeConfig;
         private readonly IAuthenticationService _authenticationService;
+        private const string Scheme = "test";
 
         public AuthenticationManagerTests()
         {
@@ -128,7 +138,7 @@ namespace Ntrada.Tests.Unit.Auth
             _authenticationService = Substitute.For<IAuthenticationService>();
             _httpContext = new DefaultHttpContext
             {
-                RequestServices = new ServiceProviderStub(_authenticationService)
+                RequestServices = new ServiceProviderStub(_authenticationService),
             };
             _routeConfig = new RouteConfig();
             _authenticationManager = new AuthenticationManager(_options);
@@ -137,13 +147,13 @@ namespace Ntrada.Tests.Unit.Auth
         private void SetSuccessfulAuth()
         {
             _authenticationService.AuthenticateAsync(Arg.Any<HttpContext>(), Arg.Any<string>())
-                .Returns(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(), "test")));
+                .Returns(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(), Scheme)));
         }
         
         private void SetFailedAuth()
         {
             _authenticationService.AuthenticateAsync(Arg.Any<HttpContext>(), Arg.Any<string>())
-                .Returns(AuthenticateResult.Fail("test"));
+                .Returns(AuthenticateResult.Fail(Scheme));
         }
 
         #endregion
@@ -157,7 +167,8 @@ namespace Ntrada.Tests.Unit.Auth
                 _authenticationService = authenticationService;
             }
 
-            public object GetService(Type serviceType) => GetRequiredService(serviceType);
+            public object GetService(Type serviceType)
+                => serviceType == typeof(IAuthenticationService) ? _authenticationService : null;
 
             public object GetRequiredService(Type serviceType)
                 => serviceType == typeof(IAuthenticationService) ? _authenticationService : null;

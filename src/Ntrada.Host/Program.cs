@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Ntrada.Host
 {
+    [ExcludeFromCodeCoverage]
     public static class Program
     {
         public static async Task Main(string[] args)

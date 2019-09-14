@@ -1,10 +1,12 @@
-﻿using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 
 namespace Ntrada.Samples.Api
 {
+    [ExcludeFromCodeCoverage]
     public class Program
     {
         public static void Main(string[] args)
