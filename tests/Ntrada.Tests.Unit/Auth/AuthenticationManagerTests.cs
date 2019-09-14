@@ -18,7 +18,6 @@ namespace Ntrada.Tests.Unit.Auth
     [ExcludeFromCodeCoverage]
     public class AuthenticationManagerTests
     {
-        [Fact]
         public Task<bool> Act() => _authenticationManager.TryAuthenticateAsync(_httpContext.Request, _routeConfig);
 
         [Fact]

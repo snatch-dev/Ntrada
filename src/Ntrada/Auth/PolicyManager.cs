@@ -41,7 +41,7 @@ namespace Ntrada.Auth
                 .ToArray();
             if (missingPolicies.Any())
             {
-                throw new Exception($"Missing policies: '{string.Join(", ", missingPolicies)}'");
+                throw new InvalidOperationException($"Missing policies: '{string.Join(", ", missingPolicies)}'");
             }
         }
     }

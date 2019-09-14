@@ -14,7 +14,6 @@ namespace Ntrada.Tests.Unit.Auth
     [ExcludeFromCodeCoverage]
     public class AuthorizationManagerTests
     {
-        [Fact]
         public bool Act() => _authorizationManager.IsAuthorized(_user, _routeConfig);
 
         [Fact]
