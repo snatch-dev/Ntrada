@@ -8,12 +8,15 @@ namespace Ntrada.Routing
 {
     public class RequestExecutionValidator : IRequestExecutionValidator
     {
-        private readonly IAccessValidator _accessValidator;
+        private readonly IAuthenticationManager _authenticationManager;
+        private readonly IAuthorizationManager _authorizationManager;
         private readonly ILogger<RequestExecutionValidator> _logger;
 
-        public RequestExecutionValidator(IAccessValidator accessValidator, ILogger<RequestExecutionValidator> logger)
+        public RequestExecutionValidator(IAuthenticationManager authenticationManager,
+            IAuthorizationManager authorizationManager, ILogger<RequestExecutionValidator> logger)
         {
-            _accessValidator = accessValidator;
+            _authenticationManager = authenticationManager;
+            _authorizationManager = authorizationManager;
             _logger = logger;
         }
 
@@ -21,7 +24,7 @@ namespace Ntrada.Routing
             RouteConfig routeConfig)
         {
             var traceId = request.HttpContext.TraceIdentifier;
-            var isAuthenticated = await _accessValidator.IsAuthenticatedAsync(request, routeConfig);
+            var isAuthenticated = await _authenticationManager.IsAuthenticatedAsync(request, routeConfig);
             if (!isAuthenticated)
             {
                 _logger.LogWarning($"Unauthorized request to: {routeConfig.Route.Upstream} [Trace ID: {traceId}]");
@@ -30,7 +33,7 @@ namespace Ntrada.Routing
                 return false;
             }
 
-            if (_accessValidator.IsAuthorized(request.HttpContext.User, routeConfig))
+            if (_authorizationManager.IsAuthorized(request.HttpContext.User, routeConfig))
             {
                 return true;
             }

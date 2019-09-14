@@ -29,8 +29,8 @@ namespace Ntrada.Requests
             _downstreamBuilder = downstreamBuilder;
         }
 
-        public async Task<ExecutionData> ProcessAsync(RouteConfig routeConfig,
-            HttpRequest request, HttpResponse response, RouteData data)
+        public async Task<ExecutionData> ProcessAsync(RouteConfig routeConfig, HttpRequest request,
+            HttpResponse response, RouteData data)
         {
             request.Headers.TryGetValue(ContentTypeHeader, out var contentType);
             var contentTypeValue = contentType.ToString().ToLowerInvariant();

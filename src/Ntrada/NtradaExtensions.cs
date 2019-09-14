@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
@@ -16,6 +17,7 @@ using Ntrada.Requests;
 using Ntrada.Routing;
 using Polly;
 
+[assembly: InternalsVisibleTo("Ntrada.Tests.Unit")]
 namespace Ntrada
 {
     public static class NtradaExtensions
@@ -115,7 +117,9 @@ namespace Ntrada
 
         private static IServiceCollection AddNtradaServices(this IServiceCollection services)
         {
-            services.AddSingleton<IAccessValidator, AccessValidator>();
+            services.AddSingleton<IAuthenticationManager, AuthenticationManager>();
+            services.AddSingleton<IAuthorizationManager, AuthorizationManager>();
+            services.AddSingleton<IPolicyManager, PolicyManager>();
             services.AddSingleton<IDownstreamBuilder, DownstreamBuilder>();
             services.AddSingleton<IPayloadBuilder, PayloadBuilder>();
             services.AddSingleton<IPayloadManager, PayloadManager>();

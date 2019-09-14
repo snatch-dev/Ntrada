@@ -1,12 +1,10 @@
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
 namespace Ntrada.Core
 {
-    public interface IAccessValidator
+    public interface IAuthenticationManager
     {
         Task<bool> IsAuthenticatedAsync(HttpRequest request, RouteConfig routeConfig);
-        bool IsAuthorized(ClaimsPrincipal user, RouteConfig routeConfig);
     }
 }
