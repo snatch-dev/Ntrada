@@ -6,7 +6,6 @@ namespace Ntrada.Core.Configuration
     {
         public bool Enabled { get; set; }
         public bool Global { get; set; }
-        public IDictionary<string, string> Claims { get; set; }
         public IDictionary<string, Policy> Policies { get; set; }
     }
 }

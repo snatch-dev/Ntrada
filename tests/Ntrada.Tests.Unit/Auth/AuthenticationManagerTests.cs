@@ -156,8 +156,6 @@ namespace Ntrada.Tests.Unit.Auth
                 .Returns(AuthenticateResult.Fail(Scheme));
         }
 
-        #endregion
-
         private class ServiceProviderStub : IServiceProvider, ISupportRequiredService
         {
             private readonly IAuthenticationService _authenticationService;
@@ -173,5 +171,7 @@ namespace Ntrada.Tests.Unit.Auth
             public object GetRequiredService(Type serviceType)
                 => serviceType == typeof(IAuthenticationService) ? _authenticationService : null;
         }
+        
+        #endregion
     }
 }

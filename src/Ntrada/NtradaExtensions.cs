@@ -18,6 +18,7 @@ using Ntrada.Routing;
 using Polly;
 
 [assembly: InternalsVisibleTo("Ntrada.Tests.Unit")]
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 namespace Ntrada
 {
     public static class NtradaExtensions

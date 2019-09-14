@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Ntrada.Core.Configuration;
 
 namespace Ntrada.Core
@@ -7,6 +6,5 @@ namespace Ntrada.Core
     {
         public Route Route { get; set; }
         public string Downstream { get; set; }
-        public IDictionary<string, string> Claims { get; set; }
     }
 }

@@ -10,35 +10,19 @@ namespace Ntrada.Routing
     internal sealed class RouteConfigurator : IRouteConfigurator
     {
         private static readonly string LoadBalancerPattern = "load_balancer";
-        private readonly IDictionary<string, string> _claims;
         private readonly NtradaOptions _options;
 
         public RouteConfigurator(NtradaOptions options)
         {
             _options = options;
-            _claims = _options?.Auth?.Claims ?? new Dictionary<string, string>();
         }
 
         public RouteConfig Configure(Module module, Route route)
             => new RouteConfig
             {
                 Route = route,
-                Downstream = GetDownstream(module, route),
-                Claims = GetClaims(route)
+                Downstream = GetDownstream(module, route)
             };
-
-        private IDictionary<string, string> GetClaims(Route route)
-        {
-            if (route.Claims is null || !route.Claims.Any() || !_claims.Any())
-            {
-                return new Dictionary<string, string>();
-            }
-
-            return route.Claims.ToDictionary(c => GetClaimKey(c.Key), c => c.Value);
-        }
-
-        private string GetClaimKey(string claim)
-            => _claims.TryGetValue(claim, out var value) ? value : claim;
 
         private string GetDownstream(Module module, Route route)
         {

@@ -9,29 +9,25 @@ namespace Ntrada.Auth
     internal sealed class PolicyManager : IPolicyManager
     {
         private readonly IDictionary<string, Dictionary<string, string>> _policies;
-        private readonly IDictionary<string, string> _claims;
         private readonly NtradaOptions _options;
 
         public PolicyManager(NtradaOptions options)
         {
             _options = options;
-            _claims = options.Auth?.Claims ?? new Dictionary<string, string>();
             _policies = LoadPolicies();
         }
 
         public IDictionary<string, string> GetClaims(string policy)
             => _policies.TryGetValue(policy, out var claims) ? claims : null;
-        
+
         private IDictionary<string, Dictionary<string, string>> LoadPolicies()
         {
             var policies = (_options.Auth?.Policies ?? new Dictionary<string, Policy>())
-                .ToDictionary(p => p.Key, p => p.Value.Claims.ToDictionary(c => GetClaimKey(c.Key), c => c.Value));
+                .ToDictionary(p => p.Key, p => p.Value.Claims.ToDictionary(c => c.Key, c => c.Value));
             VerifyPolicies(policies);
 
             return policies;
         }
-
-        private string GetClaimKey(string claim) => _claims.TryGetValue(claim, out var value) ? value : claim;
 
         private void VerifyPolicies(IDictionary<string, Dictionary<string, string>> policies)
         {

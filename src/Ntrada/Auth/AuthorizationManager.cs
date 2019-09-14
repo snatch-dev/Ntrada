@@ -15,15 +15,27 @@ namespace Ntrada.Auth
         }
 
         public bool IsAuthorized(ClaimsPrincipal user, RouteConfig routeConfig)
-            => HasClaims(user, routeConfig.Claims) && HasPolicies(user, routeConfig.Route.Policies);
+        {
+            if (user is null)
+            {
+                return false;
+            }
+
+            if (routeConfig.Route is null)
+            {
+                return true;
+            }
+
+            return HasPolicies(user, routeConfig.Route.Policies) && HasClaims(user, routeConfig.Route.Claims);
+        }
 
         private bool HasPolicies(ClaimsPrincipal user, IEnumerable<string> policies)
-            => policies?.All(p => HasPolicy(user, p)) == true;
+            => policies is null || policies.All(p => HasPolicy(user, p));
 
         private bool HasPolicy(ClaimsPrincipal user, string policy)
             => HasClaims(user, _policyManager.GetClaims(policy));
 
         private static bool HasClaims(ClaimsPrincipal user, IDictionary<string, string> claims)
-            => claims?.All(claim => user.HasClaim(claim.Key, claim.Value)) == true;
+            => claims is null || claims.All(claim => user.HasClaim(claim.Key, claim.Value));
     }
 }
