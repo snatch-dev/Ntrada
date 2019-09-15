@@ -11,6 +11,7 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
     {
         private readonly IRabbitMqClient _rabbitMqClient;
         private readonly IRequestProcessor _requestProcessor;
+        private readonly IPayloadBuilder _payloadBuilder;
         private readonly IPayloadValidator _payloadValidator;
         private readonly IContextBuilder _contextBuilder;
         private readonly ILogger<RabbitMqHandler> _logger;
@@ -22,10 +23,12 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
         private const string ConfigExchange = "exchange";
 
         public RabbitMqHandler(IRabbitMqClient rabbitMqClient, IRequestProcessor requestProcessor,
-            IPayloadValidator payloadValidator, IContextBuilder contextBuilder, ILogger<RabbitMqHandler> logger)
+            IPayloadBuilder payloadBuilder, IPayloadValidator payloadValidator, IContextBuilder contextBuilder,
+            ILogger<RabbitMqHandler> logger)
         {
             _rabbitMqClient = rabbitMqClient;
             _requestProcessor = requestProcessor;
+            _payloadBuilder = payloadBuilder;
             _payloadValidator = payloadValidator;
             _contextBuilder = contextBuilder;
             _logger = logger;
@@ -46,7 +49,9 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
             var config = executionData.Route.Config;
             var routingKey = config[ConfigRoutingKey];
             var exchange = config[ConfigExchange];
-            var message = executionData.Payload;
+            var message = executionData.HasPayload
+                ? executionData.Payload
+                : await _payloadBuilder.BuildJsonAsync<object>(request);
             var context = _contextBuilder.Build(executionData);
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
             

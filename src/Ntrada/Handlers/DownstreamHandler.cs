@@ -135,7 +135,7 @@ namespace Ntrada.Handlers
                     return () =>
                     {
                         var url = executionData.Downstream;
-                        var payload = executionData.IsCustomPayload
+                        var payload = executionData.HasPayload
                             ? GetPayload(executionData.Payload, executionData.ContentType)
                             : new StreamContent(executionData.Request.Body);
                         return httpClient.PostAsync(url, payload);
@@ -144,7 +144,7 @@ namespace Ntrada.Handlers
                     return () =>
                     {
                         var url = executionData.Downstream;
-                        var payload = executionData.IsCustomPayload
+                        var payload = executionData.HasPayload
                             ? GetPayload(executionData.Payload, executionData.ContentType)
                             : new StreamContent(executionData.Request.Body);
                         return httpClient.PutAsync(url, payload);

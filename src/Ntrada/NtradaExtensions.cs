@@ -124,6 +124,7 @@ namespace Ntrada
             services.AddSingleton<IDownstreamBuilder, DownstreamBuilder>();
             services.AddSingleton<IPayloadBuilder, PayloadBuilder>();
             services.AddSingleton<IPayloadManager, PayloadManager>();
+            services.AddSingleton<IPayloadTransformer, PayloadTransformer>();
             services.AddSingleton<IPayloadValidator, PayloadValidator>();
             services.AddSingleton<IRequestExecutionValidator, RequestExecutionValidator>();
             services.AddSingleton<IRequestHandlerManager, RequestHandlerManager>();

@@ -21,7 +21,7 @@ namespace Ntrada.Core
         public RouteData Data { get; set; }
         public string Downstream { get; set; }
         public ExpandoObject Payload { get; set; }
-        public bool IsCustomPayload { get; set; }
+        public bool HasPayload { get; set; }
         public IEnumerable<Error> ValidationErrors { get; set; } = Enumerable.Empty<Error>();
         public bool IsPayloadValid => !ValidationErrors.Any();
     }

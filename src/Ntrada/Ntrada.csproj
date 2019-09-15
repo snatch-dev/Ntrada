@@ -31,10 +31,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Ntrada.Core\Ntrada.Core.csproj" />
     <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Cors\Ntrada.Extensions.Cors.csproj" />
     <ProjectReference Include="..\..\extensions\Ntrada.Extensions.CustomErrors\Ntrada.Extensions.CustomErrors.csproj" />
     <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Tracing\Ntrada.Extensions.Tracing.csproj" />
-    <ProjectReference Include="..\Ntrada.Core\Ntrada.Core.csproj" />
     <ProjectReference Include="..\..\extensions\Ntrada.Extensions.RabbitMq\Ntrada.Extensions.RabbitMq.csproj" />
     <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Jwt\Ntrada.Extensions.Jwt.csproj" />
   </ItemGroup>

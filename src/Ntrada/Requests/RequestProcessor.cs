@@ -16,16 +16,18 @@ namespace Ntrada.Requests
         private const string ContentTypeTextPlain = "text/plain";
         private const string ContentTypeHeader = "Content-Type";
         private readonly NtradaOptions _options;
+        private readonly IPayloadTransformer _payloadTransformer;
         private readonly IPayloadBuilder _payloadBuilder;
-        private readonly IPayloadManager _payloadManager;
+        private readonly IPayloadValidator _payloadValidator;
         private readonly IDownstreamBuilder _downstreamBuilder;
 
-        public RequestProcessor(NtradaOptions options, IPayloadBuilder payloadBuilder,
-            IPayloadManager payloadManager, IDownstreamBuilder downstreamBuilder)
+        public RequestProcessor(NtradaOptions options, IPayloadTransformer payloadTransformer,
+            IPayloadBuilder payloadBuilder, IPayloadValidator payloadValidator, IDownstreamBuilder downstreamBuilder)
         {
             _options = options;
+            _payloadTransformer = payloadTransformer;
             _payloadBuilder = payloadBuilder;
-            _payloadManager = payloadManager;
+            _payloadValidator = payloadValidator;
             _downstreamBuilder = downstreamBuilder;
         }
 
@@ -45,12 +47,11 @@ namespace Ntrada.Requests
                                                             route.DownstreamMethod == "get" ||
                                                             route.DownstreamMethod == "delete");
 
-            var isCustomPayload = _payloadBuilder.IsCustom(requestId, route);
-            var payload = skipPayload
-                ? null
-                : isCustomPayload
-                    ? await _payloadBuilder.BuildAsync(resourceId, route, request, data)
-                    : null;
+            var hasTransformations = !skipPayload && _payloadTransformer.HasTransformations(requestId, route);
+            var payload = hasTransformations
+                ? _payloadTransformer.Transform(await _payloadBuilder.BuildRawAsync(request),
+                    resourceId, route, request, data)
+                : null;
 
             var executionData = new ExecutionData
             {
@@ -66,7 +67,7 @@ namespace Ntrada.Requests
                 Data = data,
                 Downstream = _downstreamBuilder.GetDownstream(routeConfig, request, data),
                 Payload = payload?.Payload,
-                IsCustomPayload = isCustomPayload
+                HasPayload = hasTransformations
             };
 
             if (skipPayload || payload is null)
@@ -74,7 +75,7 @@ namespace Ntrada.Requests
                 return executionData;
             }
 
-            executionData.ValidationErrors = await _payloadManager.GetValidationErrorsAsync(payload);
+            executionData.ValidationErrors = await _payloadValidator.GetValidationErrorsAsync(payload);
 
             return executionData;
         }
@@ -85,19 +86,19 @@ namespace Ntrada.Requests
             var resourceId = string.Empty;
             var traceId = string.Empty;
             if (routeConfig.Route.GenerateRequestId == true ||
-                _options.GenerateRequestId == true && (routeConfig.Route.GenerateRequestId != false))
+                _options.GenerateRequestId == true && routeConfig.Route.GenerateRequestId != false)
             {
                 requestId = Guid.NewGuid().ToString("N");
             }
 
             if (routeConfig.Route.ResourceId?.Generate == true ||
-                _options.ResourceId?.Generate == true && (routeConfig.Route.ResourceId?.Generate != false))
+                _options.ResourceId?.Generate == true && routeConfig.Route.ResourceId?.Generate != false)
             {
                 resourceId = Guid.NewGuid().ToString("N");
             }
 
             if (routeConfig.Route.GenerateTraceId == true ||
-                _options.GenerateTraceId == true && (routeConfig.Route.GenerateTraceId != false))
+                _options.GenerateTraceId == true && routeConfig.Route.GenerateTraceId != false)
             {
                 traceId = request.HttpContext.TraceIdentifier;
             }

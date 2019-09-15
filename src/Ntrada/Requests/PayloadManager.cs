@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Ntrada.Core;
 using Ntrada.Options;
@@ -12,16 +10,13 @@ namespace Ntrada.Requests
     internal sealed class PayloadManager : IPayloadManager
     {
         private readonly NtradaOptions _options;
-        private readonly ISchemaValidator _schemaValidator;
+        public IDictionary<string, PayloadSchema> Payloads { get; }
 
-        public PayloadManager(NtradaOptions options, ISchemaValidator schemaValidator)
+        public PayloadManager(NtradaOptions options)
         {
             _options = options;
-            _schemaValidator = schemaValidator;
             Payloads = LoadPayloads();
         }
-
-        public IDictionary<string, PayloadSchema> Payloads { get; }
 
         private IDictionary<string, PayloadSchema> LoadPayloads()
         {
@@ -86,17 +81,6 @@ namespace Ntrada.Requests
             }
 
             return payloads;
-        }
-
-        public async Task<IEnumerable<Error>> GetValidationErrorsAsync(PayloadSchema payloadSchema)
-        {
-            if (string.IsNullOrWhiteSpace(payloadSchema.Schema))
-            {
-                return Enumerable.Empty<Error>();
-            }
-
-            return await _schemaValidator.ValidateAsync(JsonConvert.SerializeObject(payloadSchema.Payload),
-                payloadSchema.Schema);
         }
 
         public string GetKey(string method, string upstream) => $"{method?.ToLowerInvariant()}:{upstream}";
