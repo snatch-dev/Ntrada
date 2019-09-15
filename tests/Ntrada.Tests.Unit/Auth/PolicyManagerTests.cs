@@ -12,7 +12,7 @@ namespace Ntrada.Tests.Unit.Auth
     [ExcludeFromCodeCoverage]
     public class PolicyManagerTests
     {
-        public IDictionary<string, string> Act(string policy) => _policyManager.GetClaims(policy);
+        private IDictionary<string, string> Act(string policy) => _policyManager.GetClaims(policy);
 
         [Fact]
         public void get_claims_should_be_null_if_policies_are_not_defined()

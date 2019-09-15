@@ -31,13 +31,8 @@ namespace Ntrada.Extensions
             var extensions = new HashSet<IEnabledExtension>();
             foreach (var extensionType in extensionTypes)
             {
-                var extension = Activator.CreateInstance(extensionType) as IExtension;
-                if (extension is null)
-                {
-                    continue;
-                }
-
-                var options = _options.Extensions.SingleOrDefault(o =>
+                var extension = (IExtension) Activator.CreateInstance(extensionType);
+                var options = _options.Extensions?.SingleOrDefault(o =>
                     o.Key.Equals(extension.Name, StringComparison.InvariantCultureIgnoreCase)).Value;
 
                 if (options is null)

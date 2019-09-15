@@ -6,7 +6,7 @@ using Ntrada.Core;
 
 namespace Ntrada.Routing
 {
-    public class RequestExecutionValidator : IRequestExecutionValidator
+    internal sealed class RequestExecutionValidator : IRequestExecutionValidator
     {
         private readonly IAuthenticationManager _authenticationManager;
         private readonly IAuthorizationManager _authorizationManager;

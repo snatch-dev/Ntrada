@@ -18,7 +18,7 @@ namespace Ntrada.Tests.Unit.Auth
     [ExcludeFromCodeCoverage]
     public class AuthenticationManagerTests
     {
-        public Task<bool> Act() => _authenticationManager.TryAuthenticateAsync(_httpContext.Request, _routeConfig);
+        private Task<bool> Act() => _authenticationManager.TryAuthenticateAsync(_httpContext.Request, _routeConfig);
 
         [Fact]
         public async Task try_authenticate_should_return_true_if_auth_is_disabled()
