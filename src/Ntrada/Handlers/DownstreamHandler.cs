@@ -4,7 +4,6 @@ using System.Dynamic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -21,10 +20,8 @@ namespace Ntrada.Handlers
 {
     internal sealed class DownstreamHandler : IHandler
     {
-        private static readonly string TransformationToken = "^";
-        private static readonly string ContentTypeApplicationJson = "application/json";
-        private static readonly string ContentTypeHeader = "Content-Type";
-        private static readonly Regex VariablesRegex = new Regex(@"\{(.*?)\}", RegexOptions.Compiled);
+        private const string ContentTypeApplicationJson = "application/json";
+        private const string ContentTypeHeader = "Content-Type";
         private static readonly string[] ExcludedResponseHeaders = {"transfer-encoding", "content-length"};
         private readonly IServiceProvider _serviceProvider;
         private readonly IRequestProcessor _requestProcessor;
@@ -47,15 +44,14 @@ namespace Ntrada.Handlers
         public string GetInfo(Route route) =>
             $"call the downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
 
-        public async Task HandleAsync(HttpRequest request, HttpResponse response, RouteData routeData,
-            RouteConfig routeConfig)
+        public async Task HandleAsync(HttpRequest request, HttpResponse response, RouteData data, RouteConfig config)
         {
-            if (routeConfig.Route.Downstream is null)
+            if (config.Route.Downstream is null)
             {
                 return;
             }
 
-            var executionData = await _requestProcessor.ProcessAsync(routeConfig, request, response, routeData);
+            var executionData = await _requestProcessor.ProcessAsync(config, request, response, data);
             if (!await _payloadValidator.TryValidate(executionData, response))
             {
                 return;
@@ -66,8 +62,8 @@ namespace Ntrada.Handlers
                 return;
             }
 
-            var method = routeConfig.Route.Method.ToUpperInvariant();
-            _logger.LogInformation($"Sending HTTP {method} request to: {routeConfig.Downstream} " +
+            var method = config.Route.Method.ToUpperInvariant();
+            _logger.LogInformation($"Sending HTTP {method} request to: {config.Downstream} " +
                                    $"[Trace ID: {request.HttpContext.TraceIdentifier}]");
             var httpResponse = SendRequestAsync(executionData);
             if (httpResponse is null)
@@ -271,12 +267,7 @@ namespace Ntrada.Handlers
                     continue;
                 }
 
-                if (header.Value.Contains(TransformationToken))
-                {
-                    HandleTransformation(header, response, httpResponse, executionData);
-                }
-
-                if (!string.IsNullOrWhiteSpace(header.Value) && !header.Value.Contains(TransformationToken))
+                if (!string.IsNullOrWhiteSpace(header.Value))
                 {
                     response.Headers.Remove(header.Key);
                     response.Headers.Add(header.Key, header.Value);
@@ -349,55 +340,6 @@ namespace Ntrada.Handlers
             {
                 await response.WriteAsync(onSuccess.Data.ToString());
             }
-        }
-
-        private static void HandleTransformation(KeyValuePair<string, string> header, HttpResponse response,
-            HttpResponseMessage httpResponse, ExecutionData executionData)
-        {
-            var modifiers = header.Value.Split('^');
-            var basePart = modifiers[0];
-            var modifier = modifiers[1];
-            if (string.IsNullOrWhiteSpace(modifier) || !modifier.StartsWith("response:headers:"))
-            {
-                return;
-            }
-
-            var parts = modifier.Split(':');
-            if (parts.Length != 4)
-            {
-                return;
-            }
-
-            var headerName = parts[2];
-            var value = parts[3];
-            if (!httpResponse.Headers.TryGetValues(headerName, out var headerValues))
-            {
-                return;
-            }
-
-            var headerValue = headerValues?.FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(headerValue))
-            {
-                return;
-            }
-
-            var baseMatches = VariablesRegex.Match(basePart);
-            var valueMatches = VariablesRegex.Match(value);
-            if (!baseMatches.Success || !valueMatches.Success || baseMatches.Value != valueMatches.Value)
-            {
-                return;
-            }
-
-            var plainValue = value.Replace(valueMatches.Value, string.Empty);
-            var headerPlainValue = headerValue.Replace(plainValue, string.Empty);
-            var newHeaderValue = basePart.Replace(baseMatches.Value, headerPlainValue);
-            if (string.IsNullOrWhiteSpace(newHeaderValue))
-            {
-                return;
-            }
-
-            response.Headers.Remove(header.Key);
-            response.Headers.Add(header.Key, newHeaderValue);
         }
     }
 }

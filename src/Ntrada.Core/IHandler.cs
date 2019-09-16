@@ -8,6 +8,6 @@ namespace Ntrada.Core
     public interface IHandler
     {
         string GetInfo(Route route);
-        Task HandleAsync(HttpRequest request, HttpResponse response, RouteData routeData, RouteConfig routeConfig);
+        Task HandleAsync(HttpRequest request, HttpResponse response, RouteData data, RouteConfig config);
     }
 }
