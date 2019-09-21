@@ -1,4 +1,4 @@
-namespace Ntrada.Core.Configuration
+namespace Ntrada.Configuration
 {
     public class LoadBalancer
     {

@@ -1,5 +1,3 @@
-using Ntrada.Core;
-
 namespace Ntrada.Extensions.Tracing
 {
     public class TracingOptions : IOptions

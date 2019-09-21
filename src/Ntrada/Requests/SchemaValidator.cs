@@ -14,7 +14,7 @@ namespace Ntrada.Requests
                 return Enumerable.Empty<Error>();
             }
 
-            var jsonSchema = await JsonSchema4.FromJsonAsync(schema);
+            var jsonSchema = await JsonSchema.FromJsonAsync(schema);
             var errors = jsonSchema.Validate(payload);
 
             return errors.Select(e => new Error

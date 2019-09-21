@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Ntrada.Core.Configuration;
+using Ntrada.Configuration;
 using Ntrada.Options;
 
 namespace Ntrada.Routing

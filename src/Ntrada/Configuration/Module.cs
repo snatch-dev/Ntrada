@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Ntrada.Core.Configuration
+namespace Ntrada.Configuration
 {
     public class Module
     {

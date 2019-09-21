@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json;
 using Ntrada.Options;
-using Route = Ntrada.Core.Configuration.Route;
+using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada.Requests
 {

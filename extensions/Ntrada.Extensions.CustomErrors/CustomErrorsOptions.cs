@@ -1,5 +1,3 @@
-using Ntrada.Core;
-
 namespace Ntrada.Extensions.CustomErrors
 {
     public class CustomErrorsOptions : IOptions

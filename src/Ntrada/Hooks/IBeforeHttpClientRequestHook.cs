@@ -1,6 +1,6 @@
 using System.Net.Http;
 
-namespace Ntrada.Core.Hooks
+namespace Ntrada.Hooks
 {
     public interface IBeforeHttpClientRequestHook
     {

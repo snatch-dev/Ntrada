@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Ntrada.Core;
 
 namespace Ntrada.Extensions.Cors
 {

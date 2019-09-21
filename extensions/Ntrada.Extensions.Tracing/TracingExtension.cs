@@ -5,7 +5,6 @@ using Jaeger.Senders;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Ntrada.Core;
 using OpenTracing;
 using OpenTracing.Util;
 

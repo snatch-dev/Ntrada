@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Ntrada.Auth;
-using Ntrada.Core.Configuration;
+using Ntrada.Configuration;
 using Ntrada.Options;
 using Shouldly;
 using Xunit;
@@ -24,7 +24,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public void get_claims_should_be_null_if_policy_does_not_exist()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Policies = _policies
             };
@@ -36,7 +36,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public void get_claims_should_not_be_empty_if_policy_exists()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Policies = _policies
             };
@@ -48,7 +48,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public void get_claims_should_not_be_empty_if_policy_exists_and_is_used_in_routes()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Policies = _policies
             };
@@ -61,7 +61,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public void get_claims_should_throw_an_exception_if_policy_used_in_route_was_not_defined()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Policies = _policies
             };

@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Ntrada.Core.Configuration;
+using Ntrada.Configuration;
 using Ntrada.Extensions;
 
 namespace Ntrada.Options
@@ -13,7 +13,7 @@ namespace Ntrada.Options
         public IDictionary<string, string> ResponseHeaders { get; set; }
         public bool? ForwardStatusCode { get; set; }
         public bool? PassQueryString { get; set; }
-        public Core.Configuration.Auth Auth { get; set; }
+        public Configuration.Auth Auth { get; set; }
         public string ModulesPath { get; set; }
         public string PayloadsFolder { get; set; }
         public ResourceId ResourceId { get; set; }

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Ntrada.Auth;
-using Ntrada.Core.Configuration;
+using Ntrada.Configuration;
 using Ntrada.Options;
 using Shouldly;
 using Xunit;
@@ -30,7 +30,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public async Task try_authenticate_should_return_true_if_global_auth_is_disabled()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Enabled = true
             };
@@ -42,7 +42,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public async Task try_authenticate_should_return_true_if_route_auth_is_disabled()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Enabled = true
             };
@@ -58,7 +58,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public async Task try_authenticate_should_return_false_if_global_auth_is_enabled_and_user_is_not_authenticated()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Enabled = true,
                 Global = true
@@ -72,7 +72,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public async Task try_authenticate_should_return_false_if_route_auth_is_enabled_and_user_is_not_authenticated()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Enabled = true,
                 Global = false
@@ -90,7 +90,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public async Task try_authenticate_should_return_true_if_global_auth_is_enabled_and_user_is_authenticated()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Enabled = true,
                 Global = true
@@ -104,7 +104,7 @@ namespace Ntrada.Tests.Unit.Auth
         [Fact]
         public async Task try_authenticate_should_return_true_if_route_auth_is_enabled_and_user_is_authenticated()
         {
-            _options.Auth = new Core.Configuration.Auth
+            _options.Auth = new Configuration.Auth
             {
                 Enabled = true,
                 Global = false

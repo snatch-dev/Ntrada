@@ -1,5 +1,3 @@
-using Ntrada.Core;
-
 namespace Ntrada.Extensions.RabbitMq.Contexts
 {
     internal sealed class NullContextBuilder : IContextBuilder

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Route = Ntrada.Core.Configuration.Route;
+using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada
 {

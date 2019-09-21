@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
-using Ntrada.Core.Configuration;
+using Ntrada.Configuration;
 using Ntrada.Handlers;
 using Shouldly;
 using Xunit;

@@ -1,4 +1,4 @@
-using Ntrada.Core.Configuration;
+using Ntrada.Configuration;
 
 namespace Ntrada
 {

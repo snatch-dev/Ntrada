@@ -2,8 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
-using Ntrada.Core;
-using Route = Ntrada.Core.Configuration.Route;
+using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada.Extensions.RabbitMq.Handlers
 {
