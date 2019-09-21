@@ -1,5 +1,3 @@
-using Ntrada.Core;
-
 namespace Ntrada.Extensions
 {
     internal sealed class EnabledExtension : IEnabledExtension

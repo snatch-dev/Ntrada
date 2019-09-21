@@ -1,6 +1,6 @@
 using Ntrada.Core.Configuration;
 
-namespace Ntrada.Core
+namespace Ntrada
 {
     public class RouteConfig
     {

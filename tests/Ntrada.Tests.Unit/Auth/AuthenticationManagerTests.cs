@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Ntrada.Auth;
-using Ntrada.Core;
 using Ntrada.Core.Configuration;
 using Ntrada.Options;
 using Shouldly;

@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 

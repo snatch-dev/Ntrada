@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace Ntrada.Core
+namespace Ntrada
 {
     public interface IAuthorizationManager
     {

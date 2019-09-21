@@ -1,4 +1,4 @@
-namespace Ntrada.Core
+namespace Ntrada
 {
     public interface IOptionsProvider
     {

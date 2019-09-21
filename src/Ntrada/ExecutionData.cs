@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Route = Ntrada.Core.Configuration.Route;
 
-namespace Ntrada.Core
+namespace Ntrada
 {
     public class ExecutionData
     {

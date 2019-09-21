@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
-using Ntrada.Core;
 using Ntrada.Options;
 
 namespace Ntrada.Auth

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Ntrada.Core
+namespace Ntrada
 {
     public interface IExtension
     {

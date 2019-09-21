@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Ntrada.Core;
 using Ntrada.Options;
 
 namespace Ntrada.Extensions

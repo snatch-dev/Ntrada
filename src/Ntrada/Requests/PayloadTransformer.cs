@@ -4,7 +4,6 @@ using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Newtonsoft.Json;
-using Ntrada.Core;
 using Ntrada.Options;
 using Route = Ntrada.Core.Configuration.Route;
 

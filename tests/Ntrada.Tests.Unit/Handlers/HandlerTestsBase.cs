@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Ntrada.Core;
 
 namespace Ntrada.Tests.Unit.Handlers
 {

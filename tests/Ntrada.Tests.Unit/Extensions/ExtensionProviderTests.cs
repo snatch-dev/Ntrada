@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Ntrada.Core;
 using Ntrada.Extensions;
 using Ntrada.Options;
 using Shouldly;

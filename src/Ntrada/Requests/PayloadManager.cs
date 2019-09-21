@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
 using Newtonsoft.Json;
-using Ntrada.Core;
 using Ntrada.Options;
 
 namespace Ntrada.Requests

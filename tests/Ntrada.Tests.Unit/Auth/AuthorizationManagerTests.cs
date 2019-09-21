@@ -4,7 +4,6 @@ using System.Linq;
 using System.Security.Claims;
 using NSubstitute;
 using Ntrada.Auth;
-using Ntrada.Core;
 using Ntrada.Core.Configuration;
 using Shouldly;
 using Xunit;

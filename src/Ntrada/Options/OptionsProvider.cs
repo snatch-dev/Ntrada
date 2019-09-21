@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using Ntrada.Core;
 
 namespace Ntrada.Options
 {

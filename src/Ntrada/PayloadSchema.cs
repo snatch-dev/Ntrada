@@ -1,6 +1,6 @@
 using System.Dynamic;
 
-namespace Ntrada.Core
+namespace Ntrada
 {
     public class PayloadSchema
     {

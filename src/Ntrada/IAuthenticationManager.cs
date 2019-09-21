@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Ntrada.Core
+namespace Ntrada
 {
     public interface IAuthenticationManager
     {

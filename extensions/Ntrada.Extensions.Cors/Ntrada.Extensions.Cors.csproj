@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Ntrada.Core\Ntrada.Core.csproj" />
+      <ProjectReference Include="..\..\src\Ntrada\Ntrada.csproj" />
     </ItemGroup>
 
 </Project>

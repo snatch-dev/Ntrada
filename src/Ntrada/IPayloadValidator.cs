@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
-namespace Ntrada.Core
+namespace Ntrada
 {
     public interface IPayloadValidator
     {

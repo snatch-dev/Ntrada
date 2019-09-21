@@ -1,7 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Ntrada.Core;
 using Ntrada.Options;
 
 namespace Ntrada.Routing
