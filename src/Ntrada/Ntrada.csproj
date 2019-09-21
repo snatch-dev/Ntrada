@@ -2,13 +2,12 @@
 
   <PropertyGroup>
     <Description>Ntrada API Gateway.</Description>
-    <VersionPrefix>1.2.4</VersionPrefix>
-    <Authors>Piotr Gankiewicz</Authors>
-    <Title>Ntrada_</Title>
-    <PackageId>Ntrada_</PackageId>
-    <PackageTags>Ntrada_</PackageTags>
-    <PackageProjectUrl>https://github.com/spetz/ntrada</PackageProjectUrl>
-    <PackageLicense>https://github.com/spetz/ntrada/blob/master/LICENSE</PackageLicense>
+    <Authors>snatch.dev</Authors>
+    <Title>Ntrada</Title>
+    <PackageId>Ntrada</PackageId>
+    <PackageTags>Ntrada</PackageTags>
+    <PackageProjectUrl>https://github.com/snatch-dev/Ntrada</PackageProjectUrl>
+    <PackageLicense>https://github.com/snatch-dev/Ntrada/blob/master/LICENSE</PackageLicense>
   </PropertyGroup>
 
   <PropertyGroup>

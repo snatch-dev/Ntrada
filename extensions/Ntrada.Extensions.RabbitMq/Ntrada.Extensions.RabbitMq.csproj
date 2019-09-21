@@ -1,18 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>Ntrada RabbitMQ Extensions.</Description>
-    <VersionPrefix>1.2.0</VersionPrefix>
-    <Authors>Piotr Gankiewicz</Authors>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <Title>Ntrada.Extensions.RabbitMq_</Title>
-    <PackageId>Ntrada.Extensions.RabbitMq_</PackageId>
-    <PackageTags>Ntrada.Extensions.RabbitMq_</PackageTags>
-    <PackageProjectUrl>https://github.com/spetz/ntrada</PackageProjectUrl>
-    <PackageLicense>https://github.com/spetz/ntrada/blob/master/LICENSE</PackageLicense>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
