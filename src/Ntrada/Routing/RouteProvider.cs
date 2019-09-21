@@ -70,7 +70,7 @@ namespace Ntrada.Routing
             {
                 foreach (var module in _options.Modules.Where(m => m.Value.Enabled != false))
                 {
-                    _logger.LogInformation($"Building routes for the module: '{module.Value.Name}'");
+                    _logger.LogInformation($"Building routes for the module: '{module.Key}'");
                     foreach (var route in module.Value.Routes)
                     {
                         route.Upstream = _upstreamBuilder.Build(module.Value, route);

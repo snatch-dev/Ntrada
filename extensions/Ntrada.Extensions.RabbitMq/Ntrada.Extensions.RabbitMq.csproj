@@ -5,14 +5,16 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
-
   <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" Version="5.1.1" />
+  </ItemGroup>
+  
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
     <ProjectReference Include="..\..\src\Ntrada\Ntrada.csproj" />
   </ItemGroup>
 
-
-  <ItemGroup>
-    <PackageReference Include="RabbitMQ.Client" Version="5.1.1" />
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <PackageReference Include="Ntrada" Version="0.0.*" />
   </ItemGroup>
 
 </Project>

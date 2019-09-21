@@ -23,14 +23,19 @@ namespace Ntrada
 {
     public static class NtradaExtensions
     {
-        private static readonly string Logo = @"
+        private const string Logo = @"
     / | / / /__________ _____/ /___ _
    /  |/ / __/ ___/ __ `/ __  / __ `/
   / /|  / /_/ /  / /_/ / /_/ / /_/ / 
  /_/ |_/\__/_/   \__,_/\__,_/\__,_/ 
 
 
- /___ API Gateway (Entrance) ___/";
+ /___ API Gateway (Entrance) ___/
+
+
+https://snatch.dev
+https://github.com/snatch-dev/Ntrada
+";
 
 
         public static IServiceCollection AddNtrada(this IServiceCollection services)
@@ -164,8 +169,8 @@ namespace Ntrada
             var newLine = Environment.NewLine;
             var logger = app.ApplicationServices.GetRequiredService<ILogger<Ntrada>>();
             logger.LogInformation($"{newLine}{newLine}{Logo}{newLine}{newLine}");
-            var configuration = app.ApplicationServices.GetRequiredService<NtradaOptions>();
-            if (configuration.Auth?.Enabled == true)
+            var options = app.ApplicationServices.GetRequiredService<NtradaOptions>();
+            if (options.Auth?.Enabled == true)
             {
                 logger.LogInformation($"Authentication is enabled.");
                 app.UseAuthentication();
@@ -175,7 +180,7 @@ namespace Ntrada
                 logger.LogInformation($"Authentication is disabled.");
             }
 
-            if (configuration.UseForwardedHeaders)
+            if (options.UseForwardedHeaders)
             {
                 logger.LogInformation("Enabled headers forwarding.");
                 app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -201,6 +206,11 @@ namespace Ntrada
             requestHandlerManager.AddHandler("return_value",
                 app.ApplicationServices.GetRequiredService<ReturnValueHandler>());
 
+            if (configuration.Modules is null)
+            {
+                return;
+            }
+
             var handlers = configuration.Modules
                 .Select(m => m.Value)
                 .SelectMany(m => m.Routes)
@@ -215,14 +225,19 @@ namespace Ntrada
                     throw new Exception($"Handler: '{handler}' was not defined.");
                 }
                 
-                logger.LogInformation($"Added handler: ''{handler}''");
+                logger.LogInformation($"Added handler: '{handler}'");
             }
         }
 
         private static void AddRoutes(this IApplicationBuilder app)
         {
-            var configuration = app.ApplicationServices.GetRequiredService<NtradaOptions>();
-            foreach (var route in configuration.Modules.SelectMany(m => m.Value.Routes))
+            var options = app.ApplicationServices.GetRequiredService<NtradaOptions>();
+            if (options.Modules is null)
+            {
+                return;
+            }
+            
+            foreach (var route in options.Modules.SelectMany(m => m.Value.Routes))
             {
                 route.Method =
                     (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
@@ -248,8 +263,11 @@ namespace Ntrada
                 }
                 
                 extension.Extension.Use(app, optionsProvider);
+                var orderMessage = extension.Options.Order.HasValue
+                    ? $" [order: {extension.Options.Order}]"
+                    : string.Empty;
                 logger.LogInformation($"Enabled extension: '{extension.Extension.Name}' " +
-                                      $"({extension.Extension.Description}) [order: {extension.Options.Order}]");
+                                      $"({extension.Extension.Description}){orderMessage}");
             }
         }
 

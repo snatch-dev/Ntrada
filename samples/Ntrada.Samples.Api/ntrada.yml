@@ -9,18 +9,18 @@ http:
   interval: 2.0
   exponential: true
 
-use_error_handler: true
-use_jaeger: true
-use_forwarded_headers: true
-pass_query_string: true
-modules_path: Modules
-payloads_folder: Payloads
-forward_request_headers: true
-forward_response_headers: true
-generate_request_id: true
-generate_trace_id: true
-use_local_url: true
-load_balancer:
+useErrorHandler: true
+useJaeger: true
+useForwardedHeaders: true
+passQueryString: true
+modulesPath: Modules
+payloadsFolder: Payloads
+forwardRequestHeaders: true
+forwardResponseHeaders: true
+generateRequestId: true
+generateTraceId: true
+useLocalUrl: true
+loadBalancer:
   enabled: false
   url: localhost:9999
 

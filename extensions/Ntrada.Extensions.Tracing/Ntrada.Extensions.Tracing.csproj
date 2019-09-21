@@ -12,8 +12,12 @@
       <PackageReference Include="OpenTracing.Contrib.NetCore" Version="0.6.1" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\src\Ntrada\Ntrada.csproj" />
+    <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+        <ProjectReference Include="..\..\src\Ntrada\Ntrada.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(Configuration)' == 'Release'">
+        <PackageReference Include="Ntrada" Version="0.0.*" />
     </ItemGroup>
 
 </Project>

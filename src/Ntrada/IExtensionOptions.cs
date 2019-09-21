@@ -1,6 +1,6 @@
 namespace Ntrada
 {
-    internal interface IExtensionOptions
+    public interface IExtensionOptions
     {
         int? Order { get; set; }
         bool? Enabled { get; set; }

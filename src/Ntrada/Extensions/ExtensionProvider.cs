@@ -5,7 +5,7 @@ using Ntrada.Options;
 
 namespace Ntrada.Extensions
 {
-    internal sealed class ExtensionProvider : IExtensionProvider
+    public sealed class ExtensionProvider : IExtensionProvider
     {
         private ISet<IEnabledExtension> _extensions = new HashSet<IEnabledExtension>();
 

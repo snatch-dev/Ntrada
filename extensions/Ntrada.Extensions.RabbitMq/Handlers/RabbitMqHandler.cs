@@ -9,11 +9,13 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
     public sealed class RabbitMqHandler : IHandler
     {
         private readonly IRabbitMqClient _rabbitMqClient;
+        private readonly RabbitMqOptions _options;
         private readonly IRequestProcessor _requestProcessor;
         private readonly IPayloadBuilder _payloadBuilder;
         private readonly IPayloadValidator _payloadValidator;
         private readonly IContextBuilder _contextBuilder;
         private readonly ILogger<RabbitMqHandler> _logger;
+        private readonly bool _contextEnabled;
 
         private const string RequestIdHeader = "Request-ID";
         private const string ResourceIdHeader = "Resource-ID";
@@ -21,15 +23,17 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
         private const string ConfigRoutingKey = "routing_key";
         private const string ConfigExchange = "exchange";
 
-        public RabbitMqHandler(IRabbitMqClient rabbitMqClient, IRequestProcessor requestProcessor,
-            IPayloadBuilder payloadBuilder, IPayloadValidator payloadValidator, IContextBuilder contextBuilder,
+        public RabbitMqHandler(IRabbitMqClient rabbitMqClient, IContextBuilder contextBuilder, RabbitMqOptions options,
+            IRequestProcessor requestProcessor, IPayloadBuilder payloadBuilder, IPayloadValidator payloadValidator,
             ILogger<RabbitMqHandler> logger)
         {
             _rabbitMqClient = rabbitMqClient;
+            _options = options;
+            _contextBuilder = contextBuilder;
+            _contextEnabled = options.Context?.Enabled == true;
             _requestProcessor = requestProcessor;
             _payloadBuilder = payloadBuilder;
             _payloadValidator = payloadValidator;
-            _contextBuilder = contextBuilder;
             _logger = logger;
         }
 
@@ -50,7 +54,7 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
             var message = executionData.HasPayload
                 ? executionData.Payload
                 : await _payloadBuilder.BuildJsonAsync<object>(request);
-            var context = _contextBuilder.Build(executionData);
+            var context = _contextEnabled ? _contextBuilder.Build(executionData) : null;
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
 
             _logger.LogInformation($"Sending a message: {routingKey} to the exchange: {exchange}" +

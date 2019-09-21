@@ -19,12 +19,17 @@ namespace Ntrada.Requests
 
         private IDictionary<string, PayloadSchema> LoadPayloads()
         {
+            if (_options.Modules is null)
+            {
+                return new Dictionary<string, PayloadSchema>();
+            }
+            
             var payloads = new Dictionary<string, PayloadSchema>();
             var modulesPath = _options.ModulesPath;
             modulesPath = string.IsNullOrWhiteSpace(modulesPath)
                 ? string.Empty
                 : (modulesPath.EndsWith("/") ? modulesPath : $"{modulesPath}/");
-
+            
             foreach (var module in _options.Modules)
             {
                 foreach (var route in module.Value.Routes)

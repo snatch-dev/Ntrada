@@ -4,7 +4,7 @@ using Ntrada.Extensions;
 
 namespace Ntrada.Options
 {
-    internal class NtradaOptions : IOptions
+    public class NtradaOptions : IOptions
     {
         public bool UseForwardedHeaders { get; set; }
         public bool? ForwardRequestHeaders { get; set; }

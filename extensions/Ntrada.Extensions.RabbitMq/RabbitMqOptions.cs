@@ -16,6 +16,7 @@ namespace Ntrada.Extensions.RabbitMq
         public bool UseBackgroundThreadsForIO { get; set; }
         public RabbitMqExchangeOptions Exchange { get; set; }
         public RabbitMqSslOptions Ssl { get; set; }
+        public RabbitMqContextOptions Context { get; set; }
 
         public class RabbitMqSslOptions
         {
@@ -30,6 +31,12 @@ namespace Ntrada.Extensions.RabbitMq
             public bool Durable { get; set; }
             public bool AutoDelete { get; set; }
             public string Type { get; set; }
+        }
+
+        public class RabbitMqContextOptions
+        {
+            public bool Enabled { get; set; }
+            public bool Custom { get; set; }
         }
     }
 }

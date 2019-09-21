@@ -11,6 +11,7 @@ namespace Ntrada.Extensions.RabbitMq
     {
         public string Name => "rabbitmq";
         public string Description => "RabbitMQ message broker";
+
         public void Add(IServiceCollection services, IOptionsProvider optionsProvider)
         {
             var options = optionsProvider.GetForExtension<RabbitMqOptions>(Name);
@@ -38,15 +39,23 @@ namespace Ntrada.Extensions.RabbitMq
 
                 return connectionFactory.CreateConnection();
             });
-            
+
             services.AddTransient<IRabbitMqClient, RabbitMqClient>();
             services.AddTransient<RabbitMqHandler>();
-//            var hasContext = typeof(TContext) != typeof(NullContext);
-            var hasContext = false;
-            if (!hasContext)
+            var contextEnabled = options.Context?.Enabled == true;
+            if (!contextEnabled)
             {
                 services.AddSingleton<IContextBuilder, NullContextBuilder>();
+                return;
             }
+
+            var customContext = options.Context.Custom;
+            if (customContext)
+            {
+                return;
+            }
+
+            services.AddSingleton<IContextBuilder, NullContextBuilder>();
         }
 
         public void Use(IApplicationBuilder app, IOptionsProvider optionsProvider)
