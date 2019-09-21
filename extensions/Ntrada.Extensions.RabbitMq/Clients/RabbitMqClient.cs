@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -27,6 +28,11 @@ namespace Ntrada.Extensions.RabbitMq.Clients
 
                 if (!(context is null))
                 {
+                    if (properties.Headers is null)
+                    {
+                        properties.Headers = new Dictionary<string, object>();
+                    }
+                    
                     properties.Headers.Add(MessageContextHeader, JsonConvert.SerializeObject(context));
                 }
 

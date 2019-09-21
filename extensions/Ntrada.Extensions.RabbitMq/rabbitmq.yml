@@ -1,7 +1,7 @@
 rabbitmq:
   hostname: localhost
   port: 5672
-  virtualHost: "/"
+  virtualHost: /
   username: guest
   password: guest
   requestedConnectionTimeout: 3000
@@ -11,5 +11,7 @@ rabbitmq:
   exchange:
     declareExchange: true
     durable: true
-    autoDelete: false
-    type: "topic"
+    type: topic
+  context:
+    enabled: false
+    custom: false

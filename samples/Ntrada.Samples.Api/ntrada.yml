@@ -57,7 +57,7 @@ extensions:
     enabled: true
     hostname: localhost
     port: 5672
-    virtualHost: "/"
+    virtualHost: /
     username: guest
     password: guest
     requestedConnectionTimeout: 3000
@@ -68,7 +68,10 @@ extensions:
       declareExchange: true
       durable: true
       autoDelete: false
-      type: "topic"
+      type: topic
+    context:
+      enabled: false
+      custom: false
 
   tracing:
     serviceName: ntrada
@@ -93,5 +96,4 @@ modules:
         config:
           exchange: sample.exchange
           routing_key: sample.routing.key
-          type: "topic"
 
