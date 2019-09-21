@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Cors\Ntrada.Extensions.Cors.csproj" />
+    <ProjectReference Include="..\..\extensions\Ntrada.Extensions.CustomErrors\Ntrada.Extensions.CustomErrors.csproj" />
+    <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Jwt\Ntrada.Extensions.Jwt.csproj" />
+    <ProjectReference Include="..\..\extensions\Ntrada.Extensions.RabbitMq\Ntrada.Extensions.RabbitMq.csproj" />
+    <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Tracing\Ntrada.Extensions.Tracing.csproj" />
     <ProjectReference Include="..\..\src\Ntrada\Ntrada.csproj" />
   </ItemGroup>
 
