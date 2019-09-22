@@ -13,5 +13,6 @@ rabbitmq:
     durable: true
     type: topic
   context:
-    enabled: false
-    custom: false
+    enabled: true
+    header: message_context
+    includeCorrelationId: true

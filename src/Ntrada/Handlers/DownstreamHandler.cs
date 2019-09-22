@@ -51,8 +51,9 @@ namespace Ntrada.Handlers
             }
 
             var executionData = await _requestProcessor.ProcessAsync(config, request, response, data);
-            if (!await _payloadValidator.TryValidate(executionData, response))
+            if (!executionData.IsPayloadValid)
             {
+                await _payloadValidator.TryValidate(executionData, response);
                 return;
             }
 

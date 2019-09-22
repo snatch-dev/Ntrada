@@ -42,19 +42,6 @@ namespace Ntrada.Extensions.RabbitMq
 
             services.AddTransient<IRabbitMqClient, RabbitMqClient>();
             services.AddTransient<RabbitMqHandler>();
-            var contextEnabled = options.Context?.Enabled == true;
-            if (!contextEnabled)
-            {
-                services.AddSingleton<IContextBuilder, NullContextBuilder>();
-                return;
-            }
-
-            var customContext = options.Context.Custom;
-            if (customContext)
-            {
-                return;
-            }
-
             services.AddSingleton<IContextBuilder, NullContextBuilder>();
         }
 

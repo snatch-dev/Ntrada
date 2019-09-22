@@ -36,7 +36,8 @@ namespace Ntrada.Extensions.RabbitMq
         public class RabbitMqContextOptions
         {
             public bool Enabled { get; set; }
-            public bool Custom { get; set; }
+            public string Header { get; set; }
+            public bool IncludeCorrelationId { get; set; }
         }
     }
 }

@@ -15,7 +15,6 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
         private readonly IPayloadValidator _payloadValidator;
         private readonly IContextBuilder _contextBuilder;
         private readonly ILogger<RabbitMqHandler> _logger;
-        private readonly bool _contextEnabled;
 
         private const string RequestIdHeader = "Request-ID";
         private const string ResourceIdHeader = "Resource-ID";
@@ -30,7 +29,6 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
             _rabbitMqClient = rabbitMqClient;
             _options = options;
             _contextBuilder = contextBuilder;
-            _contextEnabled = options.Context?.Enabled == true;
             _requestProcessor = requestProcessor;
             _payloadBuilder = payloadBuilder;
             _payloadValidator = payloadValidator;
@@ -42,8 +40,9 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
         public async Task HandleAsync(HttpRequest request, HttpResponse response, RouteData data, RouteConfig config)
         {
             var executionData = await _requestProcessor.ProcessAsync(config, request, response, data);
-            if (!await _payloadValidator.TryValidate(executionData, response))
+            if (!executionData.IsPayloadValid)
             {
+                await _payloadValidator.TryValidate(executionData, response);
                 return;
             }
 
@@ -54,7 +53,7 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
             var message = executionData.HasPayload
                 ? executionData.Payload
                 : await _payloadBuilder.BuildJsonAsync<object>(request);
-            var context = _contextEnabled ? _contextBuilder.Build(executionData) : null;
+            var context =_contextBuilder.Build(executionData);
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
 
             _logger.LogInformation($"Sending a message: {routingKey} to the exchange: {exchange}" +

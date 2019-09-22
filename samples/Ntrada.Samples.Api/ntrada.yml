@@ -70,8 +70,9 @@ extensions:
       autoDelete: false
       type: topic
     context:
-      enabled: false
-      custom: false
+      enabled: true
+      header: message_context
+      includeCorrelationId: true
 
   tracing:
     serviceName: ntrada
