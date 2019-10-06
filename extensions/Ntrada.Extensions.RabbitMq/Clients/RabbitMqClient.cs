@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 
@@ -10,20 +11,20 @@ namespace Ntrada.Extensions.RabbitMq.Clients
     {
         private const string EmptyContext = "{}";
         private readonly IConnection _connection;
-        private readonly RabbitMqOptions _options;
+        private readonly ILogger<RabbitMqClient> _logger;
         private readonly string _messageContextHeader;
         private readonly bool _contextEnabled;
-        private readonly bool _includeCorrelationId;
+        private readonly bool _loggerEnabled;
 
-        public RabbitMqClient(IConnection connection, RabbitMqOptions options)
+        public RabbitMqClient(IConnection connection, RabbitMqOptions options, ILogger<RabbitMqClient> logger)
         {
             _connection = connection;
-            _options = options;
+            _logger = logger;
             _contextEnabled = options.Context?.Enabled == true;
             _messageContextHeader = string.IsNullOrWhiteSpace(options.Context?.Header)
                 ? "message_context"
                 : options.Context.Header;
-            _includeCorrelationId = options.Context?.IncludeCorrelationId == true;
+            _loggerEnabled = options.Logger?.Enabled == true;
         }
 
         public void Send(object message, string routingKey, string exchange, object context = null)
@@ -33,8 +34,10 @@ namespace Ntrada.Extensions.RabbitMq.Clients
                 var json = JsonConvert.SerializeObject(message);
                 var body = Encoding.UTF8.GetBytes(json);
                 var properties = channel.CreateBasicProperties();
-                properties.MessageId = Guid.NewGuid().ToString("N");
-                properties.CorrelationId = Guid.NewGuid().ToString("N");
+                var messageId = Guid.NewGuid().ToString("N");
+                var correlationId = Guid.NewGuid().ToString("N");
+                properties.MessageId = messageId;
+                properties.CorrelationId = correlationId;
                 properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                 properties.Headers = new Dictionary<string, object>();
                 if (_contextEnabled)
@@ -42,10 +45,10 @@ namespace Ntrada.Extensions.RabbitMq.Clients
                     IncludeContext(context, properties);
                 }
 
-                if (_options.Exchange.DeclareExchange)
+                if (_loggerEnabled)
                 {
-                    channel.ExchangeDeclare(exchange, _options.Exchange.Type, _options.Exchange.Durable,
-                        _options.Exchange.AutoDelete);
+                    _logger.LogInformation($"Sending a message with routing key: '{routingKey}' to the exchange: " +
+                                           $"'{exchange}' [message id: '{messageId}', correlation id: '{correlationId}'].");
                 }
 
                 channel.BasicPublish(exchange, routingKey, properties, body);
@@ -60,24 +63,7 @@ namespace Ntrada.Extensions.RabbitMq.Clients
                 return;
             }
 
-            if (_includeCorrelationId)
-            {
-                properties.Headers.Add(_messageContextHeader,
-                    JsonConvert.SerializeObject(new Context(properties.CorrelationId)));
-                return;
-            }
-            
             properties.Headers.Add(_messageContextHeader, EmptyContext);
-        }
-
-        private class Context
-        {
-            public string CorrelationId { get; set; }
-
-            public Context(string correlationId)
-            {
-                CorrelationId = correlationId;
-            }
         }
     }
 }

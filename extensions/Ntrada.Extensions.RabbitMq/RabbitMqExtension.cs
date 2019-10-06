@@ -1,8 +1,12 @@
+using System;
+using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Ntrada.Extensions.RabbitMq.Clients;
 using Ntrada.Extensions.RabbitMq.Contexts;
 using Ntrada.Extensions.RabbitMq.Handlers;
+using Ntrada.Options;
 using RabbitMQ.Client;
 
 namespace Ntrada.Extensions.RabbitMq
@@ -20,7 +24,7 @@ namespace Ntrada.Extensions.RabbitMq
             {
                 var connectionFactory = new ConnectionFactory
                 {
-                    HostName = options.HostName,
+                    HostName = options.Hostnames?.FirstOrDefault(),
                     Port = options.Port,
                     VirtualHost = options.VirtualHost,
                     UserName = options.Username,
@@ -37,7 +41,45 @@ namespace Ntrada.Extensions.RabbitMq
                         : new SslOption(options.Ssl.ServerName, options.Ssl.CertificatePath, options.Ssl.Enabled),
                 };
 
-                return connectionFactory.CreateConnection();
+                var connection = connectionFactory.CreateConnection(options.ConnectionName);
+                if (options.Exchange?.DeclareExchange != true)
+                {
+                    return connection;
+                }
+
+                var ntradaOptions = optionsProvider.Get<NtradaOptions>();
+                var exchanges = ntradaOptions.Modules
+                    .SelectMany(m => m.Value.Routes)
+                    .Where(m => m.Use.Equals(Name, StringComparison.InvariantCultureIgnoreCase))
+                    .SelectMany(r => r.Config)
+                    .Where(c => c.Key.Equals("exchange", StringComparison.InvariantCultureIgnoreCase))
+                    .Distinct()
+                    .ToList();
+
+                if (!exchanges.Any())
+                {
+                    return connection;
+                }
+
+                var logger = sp.GetService<ILogger<IConnection>>();
+                var loggerEnabled = options.Logger?.Enabled == true;
+
+                using (var channel = connection.CreateModel())
+                {
+                    foreach (var exchange in exchanges)
+                    {
+                        var name = exchange.Value;
+                        var type = options.Exchange.Type;
+                        if (loggerEnabled)
+                        {
+                            logger.LogInformation($"Declaring an exchange: '{name}', type: '{type}'.");
+                        }
+
+                        channel.ExchangeDeclare(name, type, options.Exchange.Durable, options.Exchange.AutoDelete);
+                    }
+                }
+
+                return connection;
             });
 
             services.AddTransient<IRabbitMqClient, RabbitMqClient>();

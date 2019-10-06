@@ -1,0 +1,11 @@
+@url = http://localhost:5000
+
+###
+GET {{url}}
+
+###
+POST {{url}}
+Content-Type: application/json
+
+{
+}

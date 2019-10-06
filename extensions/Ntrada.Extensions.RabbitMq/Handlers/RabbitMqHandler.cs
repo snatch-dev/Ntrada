@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Logging;
 using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada.Extensions.RabbitMq.Handlers
@@ -9,30 +8,24 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
     public sealed class RabbitMqHandler : IHandler
     {
         private readonly IRabbitMqClient _rabbitMqClient;
-        private readonly RabbitMqOptions _options;
         private readonly IRequestProcessor _requestProcessor;
         private readonly IPayloadBuilder _payloadBuilder;
         private readonly IPayloadValidator _payloadValidator;
         private readonly IContextBuilder _contextBuilder;
-        private readonly ILogger<RabbitMqHandler> _logger;
-
         private const string RequestIdHeader = "Request-ID";
         private const string ResourceIdHeader = "Resource-ID";
         private const string TraceIdHeader = "Trace-ID";
         private const string ConfigRoutingKey = "routing_key";
         private const string ConfigExchange = "exchange";
 
-        public RabbitMqHandler(IRabbitMqClient rabbitMqClient, IContextBuilder contextBuilder, RabbitMqOptions options,
-            IRequestProcessor requestProcessor, IPayloadBuilder payloadBuilder, IPayloadValidator payloadValidator,
-            ILogger<RabbitMqHandler> logger)
+        public RabbitMqHandler(IRabbitMqClient rabbitMqClient, IContextBuilder contextBuilder,
+            IRequestProcessor requestProcessor, IPayloadBuilder payloadBuilder, IPayloadValidator payloadValidator)
         {
             _rabbitMqClient = rabbitMqClient;
-            _options = options;
             _contextBuilder = contextBuilder;
             _requestProcessor = requestProcessor;
             _payloadBuilder = payloadBuilder;
             _payloadValidator = payloadValidator;
-            _logger = logger;
         }
 
         public string GetInfo(Route route) => $"send a message to the exchange: '{route.Config["routing_key"]}'";
@@ -53,11 +46,8 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
             var message = executionData.HasPayload
                 ? executionData.Payload
                 : await _payloadBuilder.BuildJsonAsync<object>(request);
-            var context =_contextBuilder.Build(executionData);
+            var context = _contextBuilder.Build(executionData);
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
-
-            _logger.LogInformation($"Sending a message: {routingKey} to the exchange: {exchange}" +
-                                   (hasTraceId ? $" [Trace ID: {traceId}]" : string.Empty));
 
             _rabbitMqClient.Send(message, routingKey, exchange, context);
 

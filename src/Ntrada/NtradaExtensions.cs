@@ -60,10 +60,10 @@ https://github.com/snatch-dev/Ntrada
             
             var optionsProvider = new OptionsProvider(config);
             services.AddSingleton<IOptionsProvider>(optionsProvider);
-            var configuration = optionsProvider.Get<NtradaOptions>();
-            services.AddSingleton(configuration);
+            var options = optionsProvider.Get<NtradaOptions>();
+            services.AddSingleton(options);
 
-            return (configuration, optionsProvider);
+            return (options, optionsProvider);
         }
 
         private static IServiceCollection AddCoreServices(this IServiceCollection services)
@@ -147,8 +147,8 @@ https://github.com/snatch-dev/Ntrada
         
         private static IServiceCollection AddExtensions(this IServiceCollection services, IOptionsProvider optionsProvider)
         {
-            var configuration = optionsProvider.Get<NtradaOptions>();
-            var extensionProvider = new ExtensionProvider(configuration);
+            var options = optionsProvider.Get<NtradaOptions>();
+            var extensionProvider = new ExtensionProvider(options);
             services.AddSingleton<IExtensionProvider>(extensionProvider);
             
             foreach (var extension in extensionProvider.GetAll())
@@ -199,19 +199,19 @@ https://github.com/snatch-dev/Ntrada
         private static void RegisterRequestHandlers(this IApplicationBuilder app)
         {
             var logger = app.ApplicationServices.GetRequiredService<ILogger<Ntrada>>();
-            var configuration = app.ApplicationServices.GetRequiredService<NtradaOptions>();
+            var options = app.ApplicationServices.GetRequiredService<NtradaOptions>();
             var requestHandlerManager = app.ApplicationServices.GetRequiredService<IRequestHandlerManager>();
             requestHandlerManager.AddHandler("downstream",
                 app.ApplicationServices.GetRequiredService<DownstreamHandler>());
             requestHandlerManager.AddHandler("return_value",
                 app.ApplicationServices.GetRequiredService<ReturnValueHandler>());
 
-            if (configuration.Modules is null)
+            if (options.Modules is null)
             {
                 return;
             }
 
-            var handlers = configuration.Modules
+            var handlers = options.Modules
                 .Select(m => m.Value)
                 .SelectMany(m => m.Routes)
                 .Select(r => r.Use)

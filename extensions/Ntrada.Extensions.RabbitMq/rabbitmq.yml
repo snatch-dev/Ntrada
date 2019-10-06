@@ -1,5 +1,7 @@
 rabbitmq:
-  hostname: localhost
+  connectionName: ntrada
+  hostnames:
+    - localhost
   port: 5672
   virtualHost: /
   username: guest
@@ -11,8 +13,10 @@ rabbitmq:
   exchange:
     declareExchange: true
     durable: true
+    autoDelete: false
     type: topic
   context:
     enabled: true
     header: message_context
-    includeCorrelationId: true
+  logger:
+    enabled: true

@@ -1,8 +1,11 @@
+using System.Collections.Generic;
+
 namespace Ntrada.Extensions.RabbitMq
 {
     public class RabbitMqOptions : IOptions
     {
-        public string HostName { get; set; }
+        public string ConnectionName { get; set; }
+        public IEnumerable<string> Hostnames { get; set; }
         public int Port { get; set; }
         public string VirtualHost { get; set; }
         public string Username { get; set; }
@@ -14,18 +17,19 @@ namespace Ntrada.Extensions.RabbitMq
         public uint RequestedFrameMax { get; set; }
         public ushort RequestedHeartbeat { get; set; }
         public bool UseBackgroundThreadsForIO { get; set; }
-        public RabbitMqExchangeOptions Exchange { get; set; }
-        public RabbitMqSslOptions Ssl { get; set; }
-        public RabbitMqContextOptions Context { get; set; }
+        public ExchangeOptions Exchange { get; set; }
+        public SslOptions Ssl { get; set; }
+        public ContextOptions Context { get; set; }
+        public LoggerOptions Logger { get; set; }
 
-        public class RabbitMqSslOptions
+        public class SslOptions
         {
             public bool Enabled { get; set; }
             public string ServerName { get; set; }
             public string CertificatePath { get; set; }
         }
 
-        public class RabbitMqExchangeOptions
+        public class ExchangeOptions
         {
             public bool DeclareExchange { get; set; }
             public bool Durable { get; set; }
@@ -33,11 +37,16 @@ namespace Ntrada.Extensions.RabbitMq
             public string Type { get; set; }
         }
 
-        public class RabbitMqContextOptions
+        public class ContextOptions
         {
             public bool Enabled { get; set; }
             public string Header { get; set; }
-            public bool IncludeCorrelationId { get; set; }
+        }
+
+        public class LoggerOptions
+        {
+            public bool Enabled { get; set; }
+            public string Level { get; set; }
         }
     }
 }
