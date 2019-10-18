@@ -1,26 +1,27 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Microsoft.AspNetCore;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace Ntrada.Samples.Api
 {
     [ExcludeFromCodeCoverage]
     public class Program
     {
-        public static void Main(string[] args)
-        {
-            CreateWebHostBuilder(args).Build().Run();
-        }
+        public static Task Main(string[] args)
+            => CreateHostBuilder(args).Build().RunAsync();
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration(builder =>
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    var configPath = args?.FirstOrDefault() ?? "ntrada.yml";
-                    builder.AddYamlFile(configPath, false);
-                })
-                .UseStartup<Startup>();
+                    webBuilder.ConfigureAppConfiguration(builder =>
+                    {
+                        var configPath = args?.FirstOrDefault() ?? "ntrada.yml";
+                        builder.AddYamlFile(configPath, false);
+                    }).UseStartup<Startup>();
+                });
     }
 }

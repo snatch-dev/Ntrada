@@ -13,7 +13,7 @@ namespace Ntrada.Samples.Api
             services.AddNtrada();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseNtrada();
         }

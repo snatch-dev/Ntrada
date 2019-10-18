@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -43,17 +42,17 @@ namespace Ntrada.Handlers
         public string GetInfo(Route route) =>
             $"call the downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
 
-        public async Task HandleAsync(HttpRequest request, HttpResponse response, RouteData data, RouteConfig config)
+        public async Task HandleAsync(HttpContext context, RouteConfig config)
         {
             if (config.Route.Downstream is null)
             {
                 return;
             }
 
-            var executionData = await _requestProcessor.ProcessAsync(config, request, response, data);
+            var executionData = await _requestProcessor.ProcessAsync(config, context);
             if (!executionData.IsPayloadValid)
             {
-                await _payloadValidator.TryValidate(executionData, response);
+                await _payloadValidator.TryValidate(executionData, context.Response);
                 return;
             }
 
@@ -64,14 +63,14 @@ namespace Ntrada.Handlers
 
             var method = config.Route.Method.ToUpperInvariant();
             _logger.LogInformation($"Sending HTTP {method} request to: {config.Downstream} " +
-                                   $"[Trace ID: {request.HttpContext.TraceIdentifier}]");
+                                   $"[Trace ID: {context.TraceIdentifier}]");
             var httpResponse = SendRequestAsync(executionData);
             if (httpResponse is null)
             {
                 return;
             }
 
-            await WriteResponseAsync(response, await httpResponse(), executionData);
+            await WriteResponseAsync(context.Response, await httpResponse(), executionData);
         }
 
         private Func<Task<HttpResponseMessage>> SendRequestAsync(ExecutionData executionData)

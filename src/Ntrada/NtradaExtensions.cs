@@ -69,8 +69,7 @@ https://github.com/snatch-dev/Ntrada
         private static IServiceCollection AddCoreServices(this IServiceCollection services)
         {
             services.AddMvcCore()
-                .AddJsonFormatters()
-                .AddJsonOptions(o => o.SerializerSettings.Formatting = Formatting.Indented);
+                .AddNewtonsoftJson(o => o.SerializerSettings.Formatting = Formatting.Indented);
             
             return services;
         }
@@ -247,7 +246,8 @@ https://github.com/snatch-dev/Ntrada
             }
 
             var routeProvider = app.ApplicationServices.GetRequiredService<IRouteProvider>();
-            app.UseRouter(routeProvider.Build());
+            app.UseRouting();
+            app.UseEndpoints(routeProvider.Build());
         }
         
         private static void UseExtensions(this IApplicationBuilder app)

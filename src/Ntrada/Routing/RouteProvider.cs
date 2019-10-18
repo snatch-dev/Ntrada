@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
@@ -11,7 +12,7 @@ namespace Ntrada.Routing
 {
     internal sealed class RouteProvider : IRouteProvider
     {
-        private readonly IDictionary<string, Action<IRouteBuilder, string, RouteConfig>> _methods;
+        private readonly IDictionary<string, Action<IEndpointRouteBuilder, string, RouteConfig>> _methods;
         private readonly IRouteConfigurator _routeConfigurator;
         private readonly IRequestExecutionValidator _requestExecutionValidator;
         private readonly IUpstreamBuilder _upstreamBuilder;
@@ -29,43 +30,35 @@ namespace Ntrada.Routing
             _options = options;
             _requestHandlerManager = requestHandlerManager;
             _logger = logger;
-            _methods = new Dictionary<string, Action<IRouteBuilder, string, RouteConfig>>
+            _methods = new Dictionary<string, Action<IEndpointRouteBuilder, string, RouteConfig>>
             {
                 ["get"] = (builder, path, routeConfig) =>
-                    builder.MapGet(path,
-                        (request, response, routeData) => Handle(request, response, routeData, routeConfig)),
+                    builder.MapGet(path, ctx => Handle(ctx, routeConfig)),
                 ["post"] = (builder, path, routeConfig) =>
-                    builder.MapPost(path,
-                        (request, response, routeData) => Handle(request, response, routeData, routeConfig)),
+                    builder.MapPost(path, ctx => Handle(ctx, routeConfig)),
                 ["put"] = (builder, path, routeConfig) =>
-                    builder.MapPut(path,
-                        (request, response, routeData) => Handle(request, response, routeData, routeConfig)),
+                    builder.MapPut(path, ctx => Handle(ctx, routeConfig)),
                 ["delete"] = (builder, path, routeConfig) =>
-                    builder.MapDelete(path,
-                        (request, response, routeData) => Handle(request, response, routeData, routeConfig)),
-                ["patch"] = (builder, path, routeConfig) =>
-                    builder.MapVerb("patch", path,
-                        (request, response, routeData) => Handle(request, response, routeData, routeConfig)),
+                    builder.MapDelete(path, ctx => Handle(ctx, routeConfig)),
             };
         }
 
-        private async Task Handle(HttpRequest request, HttpResponse response, RouteData routeData,
-            RouteConfig routeConfig)
+        private async Task Handle(HttpContext context, RouteConfig routeConfig)
         {
             var skipAuth = _options.Auth is null ||
                            !_options.Auth.Global && routeConfig.Route.Auth is null ||
                            routeConfig.Route.Auth == false;
             if (!skipAuth &&
-                !await _requestExecutionValidator.TryExecuteAsync(request, response, routeData, routeConfig))
+                !await _requestExecutionValidator.TryExecuteAsync(context, routeConfig))
             {
                 return;
             }
 
             var handler = routeConfig.Route.Use;
-            await _requestHandlerManager.HandleAsync(handler, request, response, routeData, routeConfig);
+            await _requestHandlerManager.HandleAsync(handler, context, routeConfig);
         }
 
-        public Action<IRouteBuilder> Build()
+        public Action<IEndpointRouteBuilder> Build()
             => routeBuilder =>
             {
                 foreach (var module in _options.Modules.Where(m => m.Value.Enabled != false))

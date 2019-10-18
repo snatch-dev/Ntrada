@@ -20,7 +20,8 @@ namespace Ntrada.Extensions.Cors
                 var exposedHeaders = options.ExposedHeaders ?? Enumerable.Empty<string>();
                 cors.AddPolicy("CorsPolicy", builder =>
                 {
-                    if (options.AllowCredentials)
+                    var origins = allowedOrigins.ToArray();
+                    if (options.AllowCredentials && origins.FirstOrDefault() != "*")
                     {
                         builder.AllowCredentials();
                     }
@@ -31,7 +32,7 @@ namespace Ntrada.Extensions.Cors
                     
                     builder.WithHeaders(allowedHeaders.ToArray())
                         .WithMethods(allowedMethods.ToArray())
-                        .WithOrigins(allowedOrigins.ToArray())
+                        .WithOrigins(origins.ToArray())
                         .WithExposedHeaders(exposedHeaders.ToArray());
                 });
             });

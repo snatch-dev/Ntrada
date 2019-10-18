@@ -1,9 +1,9 @@
-FROM microsoft/dotnet:2.2-sdk AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0k AS build
 WORKDIR /publish
 COPY . .
 RUN dotnet publish src/Ntrada.Host -c Release -o out
 
-FROM microsoft/dotnet:2.2-aspnetcore-runtime
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.0
 WORKDIR /ntrada
 COPY --from=build /publish/src/Ntrada.Host/out .
 ENV ASPNETCORE_URLS http://*:5000

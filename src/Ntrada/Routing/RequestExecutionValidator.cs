@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 
 namespace Ntrada.Routing
@@ -19,27 +18,26 @@ namespace Ntrada.Routing
             _logger = logger;
         }
 
-        public async Task<bool> TryExecuteAsync(HttpRequest request, HttpResponse response, RouteData data,
-            RouteConfig routeConfig)
+        public async Task<bool> TryExecuteAsync(HttpContext context, RouteConfig routeConfig)
         {
-            var traceId = request.HttpContext.TraceIdentifier;
-            var isAuthenticated = await _authenticationManager.TryAuthenticateAsync(request, routeConfig);
+            var traceId = context.TraceIdentifier;
+            var isAuthenticated = await _authenticationManager.TryAuthenticateAsync(context.Request, routeConfig);
             if (!isAuthenticated)
             {
                 _logger.LogWarning($"Unauthorized request to: {routeConfig.Route.Upstream} [Trace ID: {traceId}]");
-                response.StatusCode = 401;
+                context.Response.StatusCode = 401;
 
                 return false;
             }
 
-            if (_authorizationManager.IsAuthorized(request.HttpContext.User, routeConfig))
+            if (_authorizationManager.IsAuthorized(context.User, routeConfig))
             {
                 return true;
             }
 
             _logger.LogWarning($"Forbidden request to: {routeConfig.Route.Upstream} by user: " +
-                               $"{request.HttpContext.User.Identity.Name} [Trace ID: {traceId}]");
-            response.StatusCode = 403;
+                               $"{context.User.Identity.Name} [Trace ID: {traceId}]");
+            context.Response.StatusCode = 403;
 
             return false;
         }

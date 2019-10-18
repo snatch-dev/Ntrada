@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada.Extensions.RabbitMq.Handlers
@@ -30,43 +29,43 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
 
         public string GetInfo(Route route) => $"send a message to the exchange: '{route.Config["routing_key"]}'";
 
-        public async Task HandleAsync(HttpRequest request, HttpResponse response, RouteData data, RouteConfig config)
+        public async Task HandleAsync(HttpContext context, RouteConfig config)
         {
-            var executionData = await _requestProcessor.ProcessAsync(config, request, response, data);
+            var executionData = await _requestProcessor.ProcessAsync(config, context);
             if (!executionData.IsPayloadValid)
             {
-                await _payloadValidator.TryValidate(executionData, response);
+                await _payloadValidator.TryValidate(executionData, context.Response);
                 return;
             }
 
-            var traceId = request.HttpContext.TraceIdentifier;
+            var traceId = context.TraceIdentifier;
             var routeConfig = executionData.Route.Config;
             var routingKey = routeConfig[ConfigRoutingKey];
             var exchange = routeConfig[ConfigExchange];
             var message = executionData.HasPayload
                 ? executionData.Payload
-                : await _payloadBuilder.BuildJsonAsync<object>(request);
-            var context = _contextBuilder.Build(executionData);
+                : await _payloadBuilder.BuildJsonAsync<object>(context.Request);
+            var messageContext = _contextBuilder.Build(executionData);
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
 
-            _rabbitMqClient.Send(message, routingKey, exchange, context);
+            _rabbitMqClient.Send(message, routingKey, exchange, messageContext);
 
             if (!string.IsNullOrWhiteSpace(executionData.RequestId))
             {
-                response.Headers.Add(RequestIdHeader, executionData.RequestId);
+                context.Response.Headers.Add(RequestIdHeader, executionData.RequestId);
             }
 
             if (!string.IsNullOrWhiteSpace(executionData.ResourceId) && executionData.Route.Method is "post")
             {
-                response.Headers.Add(ResourceIdHeader, executionData.ResourceId);
+                context.Response.Headers.Add(ResourceIdHeader, executionData.ResourceId);
             }
 
             if (hasTraceId)
             {
-                response.Headers.Add(TraceIdHeader, traceId);
+                context.Response.Headers.Add(TraceIdHeader, traceId);
             }
 
-            response.StatusCode = 202;
+            context.Response.StatusCode = 202;
         }
     }
 }

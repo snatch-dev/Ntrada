@@ -8,7 +8,7 @@ namespace Ntrada.Tests.Unit.Handlers
     [ExcludeFromCodeCoverage]
     public abstract class HandlerTestsBase
     {
-        protected Task Act() => Handler.HandleAsync(HttpContext.Request, HttpContext.Response, RouteData, RouteConfig);
+        protected Task Act() => Handler.HandleAsync(HttpContext, RouteConfig);
 
         protected abstract void get_info_should_return_value();
         

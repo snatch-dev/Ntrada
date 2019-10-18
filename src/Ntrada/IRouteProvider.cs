@@ -5,6 +5,6 @@ namespace Ntrada
 {
     internal interface IRouteProvider
     {
-        Action<IRouteBuilder> Build();
+        Action<IEndpointRouteBuilder> Build();
     }
 }

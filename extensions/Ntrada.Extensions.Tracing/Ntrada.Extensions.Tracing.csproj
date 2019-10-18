@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp2.2</TargetFramework>
+        <TargetFramework>netcoreapp3.0</TargetFramework>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Jaeger" Version="0.3.5" />
-      <PackageReference Include="OpenTracing" Version="0.12.0" />
+      <PackageReference Include="Jaeger" Version="0.3.6" />
+      <PackageReference Include="OpenTracing" Version="0.12.1" />
       <PackageReference Include="OpenTracing.Contrib.Grpc" Version="0.1.0" />
-      <PackageReference Include="OpenTracing.Contrib.NetCore" Version="0.6.1" />
+      <PackageReference Include="OpenTracing.Contrib.NetCore" Version="0.6.2" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Debug'">
@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Release'">
-        <PackageReference Include="Ntrada" Version="0.0.*" />
+        <PackageReference Include="Ntrada" Version="0.3.*" />
     </ItemGroup>
 
 </Project>

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 
 namespace Ntrada.Requests
@@ -32,15 +31,14 @@ namespace Ntrada.Requests
             _logger.LogError($"Couldn't add a request handler: '{name}'");
         }
 
-        public async Task HandleAsync(string handler, HttpRequest request, HttpResponse response, RouteData routeData,
-            RouteConfig routeConfig)
+        public async Task HandleAsync(string handler, HttpContext context, RouteConfig routeConfig)
         {
             if (!Handlers.TryGetValue(handler, out var instance))
             {
                 throw new Exception($"Handler: '{handler}' was not found.");
             }
 
-            await instance.HandleAsync(request, response, routeData, routeConfig);
+            await instance.HandleAsync(context, routeConfig);
         }
     }
 }

@@ -30,26 +30,26 @@ namespace Ntrada.Requests
             _downstreamBuilder = downstreamBuilder;
         }
 
-        public async Task<ExecutionData> ProcessAsync(RouteConfig routeConfig, HttpRequest request,
-            HttpResponse response, RouteData data)
+        public async Task<ExecutionData> ProcessAsync(RouteConfig routeConfig, HttpContext context)
         {
-            request.Headers.TryGetValue(ContentTypeHeader, out var contentType);
+            context.Request.Headers.TryGetValue(ContentTypeHeader, out var contentType);
             var contentTypeValue = contentType.ToString().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(contentTypeValue) || contentTypeValue.Contains(ContentTypeTextPlain))
             {
                 contentTypeValue = ContentTypeApplicationJson;
             }
 
-            var (requestId, resourceId, traceId) = GenerateIds(request, routeConfig);
+            var (requestId, resourceId, traceId) = GenerateIds(context.Request, routeConfig);
             var route = routeConfig.Route;
             var skipPayload = route.Use == "downstream" && (string.IsNullOrWhiteSpace(route.DownstreamMethod) ||
                                                             route.DownstreamMethod == "get" ||
                                                             route.DownstreamMethod == "delete");
 
+            var routeData = context.GetRouteData();
             var hasTransformations = !skipPayload && _payloadTransformer.HasTransformations(requestId, route);
             var payload = hasTransformations
-                ? _payloadTransformer.Transform(await _payloadBuilder.BuildRawAsync(request),
-                    resourceId, route, request, data)
+                ? _payloadTransformer.Transform(await _payloadBuilder.BuildRawAsync(context.Request),
+                    resourceId, route, context.Request, routeData)
                 : null;
 
             var executionData = new ExecutionData
@@ -57,14 +57,14 @@ namespace Ntrada.Requests
                 RequestId = requestId,
                 ResourceId = resourceId,
                 TraceId = traceId,
-                UserId = request.HttpContext.User?.Identity?.Name,
-                Claims = request.HttpContext.User?.Claims?.ToDictionary(c => c.Type, c => c.Value) ?? EmptyClaims,
+                UserId = context.Request.HttpContext.User?.Identity?.Name,
+                Claims = context.Request.HttpContext.User?.Claims?.ToDictionary(c => c.Type, c => c.Value) ?? EmptyClaims,
                 ContentType = contentTypeValue,
                 Route = routeConfig.Route,
-                Request = request,
-                Response = response,
-                Data = data,
-                Downstream = _downstreamBuilder.GetDownstream(routeConfig, request, data),
+                Request = context.Request,
+                Response = context.Response,
+                Data = routeData,
+                Downstream = _downstreamBuilder.GetDownstream(routeConfig, context.Request, routeData),
                 Payload = payload?.Payload,
                 HasPayload = hasTransformations
             };
