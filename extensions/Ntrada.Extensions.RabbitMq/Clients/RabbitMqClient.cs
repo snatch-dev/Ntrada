@@ -13,36 +13,48 @@ namespace Ntrada.Extensions.RabbitMq.Clients
         private readonly IConnection _connection;
         private readonly ILogger<RabbitMqClient> _logger;
         private readonly string _messageContextHeader;
-        private readonly bool _contextEnabled;
+        private readonly bool _messageContextEnabled;
         private readonly bool _loggerEnabled;
 
         public RabbitMqClient(IConnection connection, RabbitMqOptions options, ILogger<RabbitMqClient> logger)
         {
             _connection = connection;
             _logger = logger;
-            _contextEnabled = options.Context?.Enabled == true;
+            _messageContextEnabled = options.Context?.Enabled == true;
             _messageContextHeader = string.IsNullOrWhiteSpace(options.Context?.Header)
                 ? "message_context"
                 : options.Context.Header;
             _loggerEnabled = options.Logger?.Enabled == true;
         }
 
-        public void Send(object message, string routingKey, string exchange, object context = null)
+        public void Send(object message, string routingKey, string exchange, string messageId = null,
+            string correlationId = null, string spanContext = null, object messageContext = null,
+            IDictionary<string, object> headers = null)
         {
             using (var channel = _connection.CreateModel())
             {
                 var json = JsonConvert.SerializeObject(message);
                 var body = Encoding.UTF8.GetBytes(json);
                 var properties = channel.CreateBasicProperties();
-                var messageId = Guid.NewGuid().ToString("N");
-                var correlationId = Guid.NewGuid().ToString("N");
-                properties.MessageId = messageId;
-                properties.CorrelationId = correlationId;
+                properties.MessageId = string.IsNullOrWhiteSpace(messageId)
+                    ? Guid.NewGuid().ToString("N")
+                    : messageId;
+                properties.CorrelationId = string.IsNullOrWhiteSpace(correlationId)
+                    ? Guid.NewGuid().ToString("N")
+                    : correlationId;
                 properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
                 properties.Headers = new Dictionary<string, object>();
-                if (_contextEnabled)
+                if (_messageContextEnabled)
                 {
-                    IncludeContext(context, properties);
+                    IncludeMessageContext(messageContext, properties);
+                }
+
+                if (!(headers is null))
+                {
+                    foreach (var (key, value) in headers)
+                    {
+                        properties.Headers.TryAdd(key, value);
+                    }
                 }
 
                 if (_loggerEnabled)
@@ -55,7 +67,7 @@ namespace Ntrada.Extensions.RabbitMq.Clients
             }
         }
 
-        private void IncludeContext(object context, IBasicProperties properties)
+        private void IncludeMessageContext(object context, IBasicProperties properties)
         {
             if (!(context is null))
             {

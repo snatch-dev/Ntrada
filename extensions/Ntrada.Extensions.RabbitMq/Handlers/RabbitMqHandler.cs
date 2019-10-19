@@ -48,7 +48,7 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
             var messageContext = _contextBuilder.Build(executionData);
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
 
-            _rabbitMqClient.Send(message, routingKey, exchange, messageContext);
+            _rabbitMqClient.Send(message, routingKey, exchange, messageContext: messageContext);
 
             if (!string.IsNullOrWhiteSpace(executionData.RequestId))
             {
