@@ -11,6 +11,7 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
         private readonly IPayloadBuilder _payloadBuilder;
         private readonly IPayloadValidator _payloadValidator;
         private readonly IContextBuilder _contextBuilder;
+        private readonly ISpanContextBuilder _spanContextBuilder;
         private const string RequestIdHeader = "Request-ID";
         private const string ResourceIdHeader = "Resource-ID";
         private const string TraceIdHeader = "Trace-ID";
@@ -18,10 +19,12 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
         private const string ConfigExchange = "exchange";
 
         public RabbitMqHandler(IRabbitMqClient rabbitMqClient, IContextBuilder contextBuilder,
-            IRequestProcessor requestProcessor, IPayloadBuilder payloadBuilder, IPayloadValidator payloadValidator)
+            ISpanContextBuilder spanContextBuilder, IRequestProcessor requestProcessor, IPayloadBuilder payloadBuilder,
+            IPayloadValidator payloadValidator)
         {
             _rabbitMqClient = rabbitMqClient;
             _contextBuilder = contextBuilder;
+            _spanContextBuilder = spanContextBuilder;
             _requestProcessor = requestProcessor;
             _payloadBuilder = payloadBuilder;
             _payloadValidator = payloadValidator;
@@ -47,8 +50,10 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
                 : await _payloadBuilder.BuildJsonAsync<object>(context.Request);
             var messageContext = _contextBuilder.Build(executionData);
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
+            var spanContext = _spanContextBuilder.Build(executionData);
 
-            _rabbitMqClient.Send(message, routingKey, exchange, messageContext: messageContext);
+            _rabbitMqClient.Send(message, routingKey, exchange, spanContext: spanContext,
+                messageContext: messageContext);
 
             if (!string.IsNullOrWhiteSpace(executionData.RequestId))
             {

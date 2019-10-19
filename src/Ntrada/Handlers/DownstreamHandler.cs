@@ -39,8 +39,8 @@ namespace Ntrada.Handlers
             _beforeHttpClientRequestHooks = _serviceProvider.GetServices<IBeforeHttpClientRequestHook>();
         }
 
-        public string GetInfo(Route route) =>
-            $"call the downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
+        public string GetInfo(Route route)
+            => $"call the downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
 
         public async Task HandleAsync(HttpContext context, RouteConfig config)
         {
@@ -84,7 +84,7 @@ namespace Ntrada.Handlers
             if (executionData.Route.ForwardRequestHeaders == true ||
                 (_options.ForwardRequestHeaders == true && executionData.Route.ForwardRequestHeaders != false))
             {
-                foreach (var header in executionData.Request.Headers)
+                foreach (var header in executionData.Context.Request.Headers)
                 {
                     httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value.ToArray());
                 }
@@ -102,7 +102,7 @@ namespace Ntrada.Handlers
                     continue;
                 }
 
-                if (!executionData.Request.Headers.TryGetValue(header.Key, out var values))
+                if (!executionData.Context.Request.Headers.TryGetValue(header.Key, out var values))
                 {
                     continue;
                 }
@@ -132,7 +132,7 @@ namespace Ntrada.Handlers
                         var url = executionData.Downstream;
                         var payload = executionData.HasPayload
                             ? GetPayload(executionData.Payload, executionData.ContentType)
-                            : new StreamContent(executionData.Request.Body);
+                            : new StreamContent(executionData.Context.Request.Body);
                         return httpClient.PostAsync(url, payload);
                     };
                 case "put":
@@ -141,7 +141,7 @@ namespace Ntrada.Handlers
                         var url = executionData.Downstream;
                         var payload = executionData.HasPayload
                             ? GetPayload(executionData.Payload, executionData.ContentType)
-                            : new StreamContent(executionData.Request.Body);
+                            : new StreamContent(executionData.Context.Request.Body);
                         return httpClient.PutAsync(url, payload);
                     };
                 case "delete":
@@ -170,7 +170,7 @@ namespace Ntrada.Handlers
         private async Task WriteResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
             ExecutionData executionData)
         {
-            var traceId = executionData.Request.HttpContext.TraceIdentifier;
+            var traceId = executionData.Context.Request.HttpContext.TraceIdentifier;
             var method = executionData.Route.Method.ToUpperInvariant();
             if (!string.IsNullOrWhiteSpace(executionData.RequestId))
             {

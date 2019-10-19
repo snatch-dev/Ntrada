@@ -19,8 +19,9 @@ namespace Ntrada.Extensions.RabbitMq
         public bool UseBackgroundThreadsForIO { get; set; }
         public ExchangeOptions Exchange { get; set; }
         public SslOptions Ssl { get; set; }
-        public ContextOptions Context { get; set; }
+        public MessageContextOptions MessageContext { get; set; }
         public LoggerOptions Logger { get; set; }
+        public string SpanContextHeader { get; set; }
 
         public class SslOptions
         {
@@ -37,7 +38,7 @@ namespace Ntrada.Extensions.RabbitMq
             public string Type { get; set; }
         }
 
-        public class ContextOptions
+        public class MessageContextOptions
         {
             public bool Enabled { get; set; }
             public string Header { get; set; }

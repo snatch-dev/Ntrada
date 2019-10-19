@@ -15,8 +15,9 @@ rabbitmq:
     durable: true
     autoDelete: false
     type: topic
-  context:
+  messageContext:
     enabled: true
     header: message_context
   logger:
     enabled: true
+  spanContextHeader: span_context

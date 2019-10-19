@@ -16,8 +16,7 @@ namespace Ntrada
         public IDictionary<string, string> Claims { get; set; }
         public string ContentType { get; set; }
         public Route Route { get; set; }
-        public HttpRequest Request { get; set; }
-        public HttpResponse Response { get; set; }
+        public HttpContext Context { get; set; }
         public RouteData Data { get; set; }
         public string Downstream { get; set; }
         public ExpandoObject Payload { get; set; }

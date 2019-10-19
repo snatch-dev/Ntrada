@@ -15,16 +15,20 @@ namespace Ntrada.Extensions.RabbitMq.Clients
         private readonly string _messageContextHeader;
         private readonly bool _messageContextEnabled;
         private readonly bool _loggerEnabled;
+        private readonly string _spanContextHeader;
 
         public RabbitMqClient(IConnection connection, RabbitMqOptions options, ILogger<RabbitMqClient> logger)
         {
             _connection = connection;
             _logger = logger;
-            _messageContextEnabled = options.Context?.Enabled == true;
-            _messageContextHeader = string.IsNullOrWhiteSpace(options.Context?.Header)
+            _messageContextEnabled = options.MessageContext?.Enabled == true;
+            _messageContextHeader = string.IsNullOrWhiteSpace(options.MessageContext?.Header)
                 ? "message_context"
-                : options.Context.Header;
+                : options.MessageContext.Header;
             _loggerEnabled = options.Logger?.Enabled == true;
+            _spanContextHeader = string.IsNullOrWhiteSpace(options.SpanContextHeader)
+                ? "span_context"
+                : options.SpanContextHeader;
         }
 
         public void Send(object message, string routingKey, string exchange, string messageId = null,
@@ -47,6 +51,11 @@ namespace Ntrada.Extensions.RabbitMq.Clients
                 if (_messageContextEnabled)
                 {
                     IncludeMessageContext(messageContext, properties);
+                }
+
+                if (!string.IsNullOrWhiteSpace(spanContext))
+                {
+                    properties.Headers.Add(_spanContextHeader, spanContext);
                 }
 
                 if (!(headers is null))

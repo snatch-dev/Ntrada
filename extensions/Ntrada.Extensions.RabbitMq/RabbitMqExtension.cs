@@ -85,6 +85,7 @@ namespace Ntrada.Extensions.RabbitMq
             services.AddTransient<IRabbitMqClient, RabbitMqClient>();
             services.AddTransient<RabbitMqHandler>();
             services.AddSingleton<IContextBuilder, NullContextBuilder>();
+            services.AddSingleton<ISpanContextBuilder, NullSpanContextBuilder>();
         }
 
         public void Use(IApplicationBuilder app, IOptionsProvider optionsProvider)
