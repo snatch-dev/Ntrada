@@ -1,3 +1,4 @@
+using System;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -27,7 +28,8 @@ namespace Ntrada.Extensions.Jwt
                         ValidAudiences = options.Audiences,
                         ValidateIssuer = options.ValidateIssuer,
                         ValidateAudience = options.ValidateAudience,
-                        ValidateLifetime = options.ValidateLifetime
+                        ValidateLifetime = options.ValidateLifetime,
+                        ClockSkew = TimeSpan.Zero
                     };
                 });
         }
