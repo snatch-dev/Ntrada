@@ -69,7 +69,7 @@ namespace Ntrada.Extensions.RabbitMq.Clients
                 if (_loggerEnabled)
                 {
                     _logger.LogInformation($"Sending a message with routing key: '{routingKey}' to the exchange: " +
-                                           $"'{exchange}' [message id: '{messageId}', correlation id: '{correlationId}'].");
+                                           $"'{exchange}' [message id: '{properties.MessageId}', correlation id: '{properties.CorrelationId}'].");
                 }
 
                 channel.BasicPublish(exchange, routingKey, properties, body);
