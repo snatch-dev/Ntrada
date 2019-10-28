@@ -13,7 +13,7 @@
 
 The aim of this project is to provide an easily configurable (via YML) and extendable (e.g. RabbitMQ integration) API Gateway, that requires no coding whatsoever and can be started via Docker or as .NET Core application.
 
-## Features:
+### Features:
 
 * Configuration via single file
 * Separate modules definitions
@@ -32,16 +32,16 @@ The aim of this project is to provide an easily configurable (via YML) and exten
 * Strongly-typed service names
 * Extensibility with custom request handlers
 
-## Extensions:
+### Extensions:
 
-* JWT Authentication
+* JWT
 * RabbitMQ integration
 * Open Tracing with Jaeger
 * CORS
 * Custom errors
 
 
-No documentation yet, please take a look at the basic [ntrada.yml](https://github.com/Ntrada/Ntrada/blob/master/src/Ntrada.Host/ntrada.yml) configuration.
+No documentation yet, please take a look at the basic [ntrada.yml](https://github.com/snatch-dev/Ntrada/blob/master/samples/Ntrada.Samples.Api/ntrada.yml) configuration.
 
 ```yml
 modules:
