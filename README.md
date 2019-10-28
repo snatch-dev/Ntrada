@@ -13,6 +13,34 @@
 
 The aim of this project is to provide an easily configurable (via YML) and extendable (e.g. RabbitMQ integration) API Gateway, that requires no coding whatsoever and can be started via Docker or as .NET Core application.
 
+Features:
+
+* Configuration via single file
+* Separate modules definitions
+* Static content
+* Routing
+* Request forwarding
+* Headerss forwarding
+* Custom request bodies
+* Request body validation
+* Query string binding
+* Request & response headers modification
+* Basic request & response transformation
+* Authentication
+* Authorization
+* HTTP retries
+* Strongly-typed service names
+* Extensibility with custom request handlers
+
+Extensions:
+
+* JWT Authentication
+* RabbitMQ integration
+* Open Tracing with Jaeger
+* CORS
+* Custom errors
+
+
 No documentation yet, please take a look at the basic [ntrada.yml](https://github.com/Ntrada/Ntrada/blob/master/src/Ntrada.Host/ntrada.yml) configuration.
 
 ```yml
@@ -44,128 +72,134 @@ curl localhost:5000
 If you're willing to create your own application (instead of running it via Docker), it's all it takes to use Ntrada:
 
 ```csharp
-public static class Program
+public class Program
 {
-    public static async Task Main(string[] args)
-        => await WebHost.CreateDefaultBuilder(args)
-            .UseNtrada()
-            .UseRabbitMq() // An optional extension
-            .Build()
-            .RunAsync();
+    public static Task Main(string[] args)
+        => CreateHostBuilder(args).Build().RunAsync();
+
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.ConfigureAppConfiguration(builder =>
+                {
+                    var configPath = args?.FirstOrDefault() ?? "ntrada.yml";
+                    builder.AddYamlFile(configPath, false);
+                }).UseStartup<Startup>();
+            });
 }
 ```
 
 More **real-world examples** (modules, asynchronous messaging, load balancing etc.) can be found in the following projects:
 
-* [NPost](https://github.com/devmentors/NPost.APIGateway)
 * [Pacco](https://github.com/devmentors/Pacco.APIGateway)
-
-More complex scenario can be found under [samples](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api) directory - it's using [modules](https://github.com/Ntrada/Ntrada/tree/master/samples/Ntrada.Samples.Api/Modules), message broker, authentication etc.
-This sample requires [RabbitMQ](https://www.rabbitmq.com) up and running and provides API Gateway for [DShop](https://github.com/devmentors/DNC-DShop) project (a mirror of [DShop.Api](https://github.com/devmentors/DNC-DShop.Api) which is a standalone ASP.NET Core application).
 
 ----------------
 
 **Advanced configuration**
 
 ```yml
-use_error_handler: true
-use_jaeger: true
-use_forwarded_headers: true
-pass_query_string: true
-modules_path: Modules
-payloads_folder: Payloads
-forward_request_headers: true
-forward_response_headers: true
-generate_request_id: true
-generate_trace_id: true
-use_local_url: true
-load_balancer:
-  enabled: false
-  url: localhost:9999
-
-cors:
+auth:
   enabled: true
-  headers:
-  - Request-ID
-  - Resource-ID
-  - Trace-ID
-  - Total-Count
+  global: false
+  claims:
+    role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
 
 http:
   retries: 2
   interval: 2.0
   exponential: true
 
-auth:
-  type: jwt
-  global: true
+useErrorHandler: true
+useJaeger: true
+useForwardedHeaders: true
+passQueryString: true
+modulesPath: Modules
+payloadsFolder: Payloads
+forwardRequestHeaders: true
+forwardResponseHeaders: true
+generateRequestId: true
+generateTraceId: true
+useLocalUrl: true
+loadBalancer:
+  enabled: false
+  url: localhost:9999
+
+extensions:
+  customErrors:
+    includeExceptionMessage: true
+  
+  cors:
+    allowCredentials: true
+    allowedOrigins:
+      - '*'
+    allowedMethods:
+      - post
+      - delete
+    allowedHeaders:
+      - '*'
+    exposedHeaders:
+      - Request-ID
+      - Resource-ID
+      - Trace-ID
+      - Total-Count
+    
   jwt:
     key: eiquief5phee9pazo0Faegaez9gohThailiur5woy2befiech1oarai4aiLi6ahVecah3ie9Aiz6Peij
-    issuer: identity-service
+    issuer: ntrada
     issuers:
-    validate_issuer: true
+    validateIssuer: true
     audience:
     audiences:
-    validate_audience: false
-    validate_lifetime: true
-  claims:
-    role: http://schemas.microsoft.com/ws/2008/06/identity/claims/role
+    validateAudience: false
+    validateLifetime: true
+    
+  rabbitmq:
+    enabled: true
+    connectionName: ntrada
+    hostnames:
+      - localhost
+    port: 5672
+    virtualHost: /
+    username: guest
+    password: guest
+    requestedConnectionTimeout: 3000
+    socketReadTimeout: 3000
+    socketWriteTimeout: 3000
+    requestedHeartbeat: 60
+    exchange:
+      declareExchange: true
+      durable: true
+      autoDelete: false
+      type: topic
+    messageContext:
+      enabled: true
+      header: message_context
+    logger:
+      enabled: true
+    spanContextHeader: span_context
+
+  tracing:
+    serviceName: ntrada
+    udpHost: localhost
+    udpPort: 6831
+    maxPacketSize: 0
+    sampler: const
+    useEmptyTracer: false
 
 modules:
-- name: home
-  routes:
-  - upstream: /
-    method: GET
-    use: return_value
-    return_value: Welcome to Ntrada API.
-    auth: false
-```
-
-----------------
-
-**Additional modules**
-
-```yml
-name: Parcels
-path: /parcels
-
-routes:
-- upstream: /
-  method: GET
-  use: downstream
-  downstream: parcels-service/parcels?customerId=@user_id
-
-- upstream: /{parcelId}
-  method: GET
-  use: downstream
-  downstream: parcels-service/parcels/{parcelId}
-
-- upstream: /volume
-  method: GET
-  use: downstream
-  downstream: parcels-service/parcels/volume
-
-- upstream: /
-  method: POST
-  auth: true
-  resource_id:
-    property: parcelId
-    generate: true
-  use: message_broker
-  config:
-    exchange: parcels
-    routing_key: parcels.add_parcel
-  bind:
-    - customerId:@user_id
-
-- upstream: /{parcelId}
-  method: DELETE
-  use: downstream
-  downstream: parcels-service/parcels/{parcelId}
-  
-services:
-  parcels-service:
-    local_url: localhost:5007
-    url: load_balancer/parcels-service
-#    url: localhost:9999/orders-service
+  home:
+    routes:
+      - upstream: /
+        method: GET
+        use: return_value
+        returnValue: Welcome to Ntrada API!
+        
+      - upstream: /
+        method: POST
+        auth: false
+        use: rabbitmq
+        config:
+          exchange: sample.exchange
+          routing_key: sample.routing.key
 ```
