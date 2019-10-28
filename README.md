@@ -13,14 +13,14 @@
 
 The aim of this project is to provide an easily configurable (via YML) and extendable (e.g. RabbitMQ integration) API Gateway, that requires no coding whatsoever and can be started via Docker or as .NET Core application.
 
-Features:
+## Features:
 
 * Configuration via single file
 * Separate modules definitions
 * Static content
 * Routing
 * Request forwarding
-* Headerss forwarding
+* Headers forwarding
 * Custom request bodies
 * Request body validation
 * Query string binding
@@ -32,7 +32,7 @@ Features:
 * Strongly-typed service names
 * Extensibility with custom request handlers
 
-Extensions:
+## Extensions:
 
 * JWT Authentication
 * RabbitMQ integration
