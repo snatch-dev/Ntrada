@@ -51,8 +51,8 @@ namespace Ntrada.Requests
             if (!string.IsNullOrWhiteSpace(resourceId))
             {
                 var resourceIdProperty = string.IsNullOrWhiteSpace(route.ResourceId?.Property)
-                    ? _options.ResourceId.Property
-                    : route.ResourceId?.Property;
+                    ? _options.ResourceId?.Property
+                    : route.ResourceId.Property;
                 if (string.IsNullOrWhiteSpace(resourceIdProperty))
                 {
                     resourceIdProperty = ResourceIdProperty;

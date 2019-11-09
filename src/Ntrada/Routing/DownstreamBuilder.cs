@@ -37,6 +37,17 @@ namespace Ntrada.Routing
 
             foreach (var value in data.Values)
             {
+                if (value.Value is null)
+                {
+                    continue;
+                }
+
+                if (value.Key is "url")
+                {
+                    stringBuilder.Append($"/{value.Value}");
+                    continue;
+                }
+                
                 stringBuilder.Replace($"{{{value.Key}}}", value.Value.ToString());
             }
 

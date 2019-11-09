@@ -238,8 +238,17 @@ https://github.com/snatch-dev/Ntrada
             
             foreach (var route in options.Modules.SelectMany(m => m.Value.Routes))
             {
-                route.Method =
-                    (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
+                if (route.Methods is {})
+                {
+                    if (route.Methods.Any(m => m.Equals(route.Method, StringComparison.InvariantCultureIgnoreCase)))
+                    {
+                        throw new ArgumentException($"There's already a method {route.Method.ToUpperInvariant()} declared in route 'methods', as well as in 'method'.");
+                    }
+                    
+                    continue;
+                }
+
+                route.Method = (string.IsNullOrWhiteSpace(route.Method) ? "get" : route.Method).ToLowerInvariant();
                 route.DownstreamMethod =
                     (string.IsNullOrWhiteSpace(route.DownstreamMethod) ? route.Method : route.DownstreamMethod)
                     .ToLowerInvariant();

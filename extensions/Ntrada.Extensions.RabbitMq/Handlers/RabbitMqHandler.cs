@@ -60,7 +60,7 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
                 context.Response.Headers.Add(RequestIdHeader, executionData.RequestId);
             }
 
-            if (!string.IsNullOrWhiteSpace(executionData.ResourceId) && executionData.Route.Method is "post")
+            if (!string.IsNullOrWhiteSpace(executionData.ResourceId) && context.Request.Method is "POST")
             {
                 context.Response.Headers.Add(ResourceIdHeader, executionData.ResourceId);
             }

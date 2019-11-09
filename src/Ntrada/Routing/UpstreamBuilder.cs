@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Ntrada.Configuration;
 using Ntrada.Options;
@@ -42,13 +44,38 @@ namespace Ntrada.Routing
                 upstream = "/";
             }
 
+            if (route.MatchAll)
+            {
+                upstream = $"{upstream}/{{*url}}";
+            }
+
             var handler = _requestHandlerManager.Get(route.Use);
             var routeInfo = handler.GetInfo(route);
             var isPublicInfo = _options.Auth is null || !_options.Auth.Global && route.Auth is null ||
                                route.Auth == false
                 ? "public"
                 : "protected";
-            _logger.LogInformation($"Added {isPublicInfo} route for upstream: [{route.Method.ToUpperInvariant()}]" +
+
+            var methods = new HashSet<string>();
+            if (!string.IsNullOrWhiteSpace(route.Method))
+            {
+                methods.Add(route.Method.ToUpperInvariant());
+            }
+
+            if (route.Methods is {})
+            {
+                foreach (var method in route.Methods)
+                {
+                    if (string.IsNullOrWhiteSpace(method))
+                    {
+                        continue;
+                    }
+
+                    methods.Add(method.ToUpperInvariant());
+                }
+            }
+
+            _logger.LogInformation($"Added {isPublicInfo} route for upstream: [{string.Join(", ", methods)}]" +
                                    $"'{upstream}' -> {routeInfo}");
 
             return upstream;

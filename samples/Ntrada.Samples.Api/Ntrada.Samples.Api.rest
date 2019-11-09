@@ -9,3 +9,25 @@ Content-Type: application/json
 
 {
 }
+
+###
+GET {{url}}/orders
+
+###
+POST {{url}}/orders
+# @name create_order
+Content-Type: application/json
+
+{
+  "price": 300
+}
+
+
+
+@orderId = {{create_order.response.headers.Resource-ID}}
+
+###
+GET {{url}}/orders/{{orderId}}
+
+###
+DELETE {{url}}/orders/{{orderId}}

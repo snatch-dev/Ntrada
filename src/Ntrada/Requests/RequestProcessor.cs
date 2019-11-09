@@ -41,12 +41,11 @@ namespace Ntrada.Requests
 
             var (requestId, resourceId, traceId) = GenerateIds(context.Request, routeConfig);
             var route = routeConfig.Route;
-            var skipPayload = route.Use == "downstream" && (string.IsNullOrWhiteSpace(route.DownstreamMethod) ||
-                                                            route.DownstreamMethod == "get" ||
+            var skipPayload = route.Use == "downstream" && (route.DownstreamMethod == "get" ||
                                                             route.DownstreamMethod == "delete");
 
             var routeData = context.GetRouteData();
-            var hasTransformations = !skipPayload && _payloadTransformer.HasTransformations(requestId, route);
+            var hasTransformations = !skipPayload && _payloadTransformer.HasTransformations(resourceId, route);
             var payload = hasTransformations
                 ? _payloadTransformer.Transform(await _payloadBuilder.BuildRawAsync(context.Request),
                     resourceId, route, context.Request, routeData)
@@ -58,7 +57,8 @@ namespace Ntrada.Requests
                 ResourceId = resourceId,
                 TraceId = traceId,
                 UserId = context.Request.HttpContext.User?.Identity?.Name,
-                Claims = context.Request.HttpContext.User?.Claims?.ToDictionary(c => c.Type, c => c.Value) ?? EmptyClaims,
+                Claims = context.Request.HttpContext.User?.Claims?.ToDictionary(c => c.Type, c => c.Value) ??
+                         EmptyClaims,
                 ContentType = contentTypeValue,
                 Route = routeConfig.Route,
                 Context = context,
@@ -89,8 +89,9 @@ namespace Ntrada.Requests
                 requestId = Guid.NewGuid().ToString("N");
             }
 
-            if (routeConfig.Route.ResourceId?.Generate == true ||
-                _options.ResourceId?.Generate == true && routeConfig.Route.ResourceId?.Generate != false)
+            if (!(request.Method is "GET" || request.Method is "DELETE") &&
+                (routeConfig.Route.ResourceId?.Generate == true ||
+                 _options.ResourceId?.Generate == true && routeConfig.Route.ResourceId?.Generate != false))
             {
                 resourceId = Guid.NewGuid().ToString("N");
             }

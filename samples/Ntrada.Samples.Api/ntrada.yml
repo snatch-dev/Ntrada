@@ -19,6 +19,9 @@ forwardRequestHeaders: true
 forwardResponseHeaders: true
 generateRequestId: true
 generateTraceId: true
+resourceId:
+  generate: true
+  property: id
 useLocalUrl: true
 loadBalancer:
   enabled: false
@@ -102,3 +105,19 @@ modules:
           exchange: sample.exchange
           routing_key: sample.routing.key
 
+  orders:
+    routes:
+      - upstream: /orders
+#        method: GET
+        methods:
+          - GET
+          - POST
+          - DELETE
+        matchAll: true
+        use: downstream
+        downstream: orders-service/orders
+          
+    services:
+      orders-service:
+        localUrl: localhost:5001
+        url: orders-service

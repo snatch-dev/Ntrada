@@ -66,9 +66,28 @@ namespace Ntrada.Routing
                     _logger.LogInformation($"Building routes for the module: '{module.Key}'");
                     foreach (var route in module.Value.Routes)
                     {
+                        if (string.IsNullOrWhiteSpace(route.Method) && route.Methods is null)
+                        {
+                            throw new ArgumentException("Both, route 'method' and 'methods' cannot be empty.");
+                        }
+
                         route.Upstream = _upstreamBuilder.Build(module.Value, route);
                         var routeConfig = _routeConfigurator.Configure(module.Value, route);
-                        _methods[route.Method](routeBuilder, route.Upstream, routeConfig);
+                        
+                        if (!string.IsNullOrWhiteSpace(route.Method))
+                        {
+                            _methods[route.Method](routeBuilder, route.Upstream, routeConfig);
+                        }
+
+                        if (route.Methods is null)
+                        {
+                            continue;
+                        }
+
+                        foreach (var method in route.Methods)
+                        {
+                            _methods[method.ToLowerInvariant()](routeBuilder, route.Upstream, routeConfig);
+                        }
                     }
                 }
             };

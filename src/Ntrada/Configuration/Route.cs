@@ -7,6 +7,8 @@ namespace Ntrada.Configuration
         public ResourceId ResourceId { get; set; }
         public string Upstream { get; set; }
         public string Method { get; set; }
+        public IEnumerable<string> Methods { get; set; }
+        public bool MatchAll { get; set; }
         public string Use { get; set; }
         public string Downstream { get; set; }
         public string DownstreamMethod { get; set; }

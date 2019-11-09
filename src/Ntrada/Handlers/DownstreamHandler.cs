@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -21,6 +22,9 @@ namespace Ntrada.Handlers
         private const string ContentTypeApplicationJson = "application/json";
         private const string ContentTypeHeader = "Content-Type";
         private static readonly string[] ExcludedResponseHeaders = {"transfer-encoding", "content-length"};
+
+        private static readonly HttpContent EmptyContent =
+            new StringContent("{}", Encoding.UTF8, ContentTypeApplicationJson);
         private readonly IServiceProvider _serviceProvider;
         private readonly IRequestProcessor _requestProcessor;
         private readonly IPayloadValidator _payloadValidator;
@@ -39,8 +43,7 @@ namespace Ntrada.Handlers
             _beforeHttpClientRequestHooks = _serviceProvider.GetServices<IBeforeHttpClientRequestHook>();
         }
 
-        public string GetInfo(Route route)
-            => $"call the downstream: [{route.DownstreamMethod.ToUpperInvariant()}] '{route.Downstream}'";
+        public string GetInfo(Route route) => $"call the downstream: '{route.Downstream}'";
 
         public async Task HandleAsync(HttpContext context, RouteConfig config)
         {
@@ -60,9 +63,8 @@ namespace Ntrada.Handlers
             {
                 return;
             }
-
-            var method = config.Route.Method.ToUpperInvariant();
-            _logger.LogInformation($"Sending HTTP {method} request to: {config.Downstream} " +
+            
+            _logger.LogInformation($"Sending HTTP {context.Request.Method} request to: {config.Downstream} " +
                                    $"[Trace ID: {context.TraceIdentifier}]");
             var httpResponse = SendRequestAsync(executionData);
             if (httpResponse is null)
@@ -77,7 +79,7 @@ namespace Ntrada.Handlers
         {
             var httpClient = _serviceProvider.GetService<IHttpClientFactory>().CreateClient("ntrada");
             var method = (string.IsNullOrWhiteSpace(executionData.Route.DownstreamMethod)
-                    ? executionData.Route.Method
+                    ? executionData.Context.Request.Method
                     : executionData.Route.DownstreamMethod)
                 .ToLowerInvariant();
 
@@ -121,63 +123,50 @@ namespace Ntrada.Handlers
             switch (method)
             {
                 case "get":
-                    return () =>
-                    {
-                        var url = executionData.Downstream;
-                        return httpClient.GetAsync(url);
-                    };
+                    return () => httpClient.GetAsync(executionData.Downstream);
                 case "post":
-                    return () =>
-                    {
-                        var url = executionData.Downstream;
-                        var payload = executionData.HasPayload
-                            ? GetPayload(executionData.Payload, executionData.ContentType)
-                            : new StreamContent(executionData.Context.Request.Body);
-                        return httpClient.PostAsync(url, payload);
-                    };
+                    return () => httpClient.PostAsync(executionData.Downstream, GetHttpContent(executionData));
                 case "put":
-                    return () =>
-                    {
-                        var url = executionData.Downstream;
-                        var payload = executionData.HasPayload
-                            ? GetPayload(executionData.Payload, executionData.ContentType)
-                            : new StreamContent(executionData.Context.Request.Body);
-                        return httpClient.PutAsync(url, payload);
-                    };
+                    return () => httpClient.PutAsync(executionData.Downstream, GetHttpContent(executionData));
                 case "delete":
-                    return () =>
-                    {
-                        var url = executionData.Downstream;
-                        return httpClient.DeleteAsync(url);
-                    };
+                    return () => httpClient.DeleteAsync(executionData.Downstream);
                 default:
                     return null;
             }
         }
 
-        private static HttpContent GetPayload(object data, string contentType)
+        private static HttpContent GetHttpContent(ExecutionData executionData)
         {
-            if (data is null || string.IsNullOrWhiteSpace(contentType))
+            var data = executionData.Payload;
+            var contentType = executionData.ContentType;
+            if (executionData.HasPayload)
             {
-                return new StringContent(string.Empty);
+                if (data is null || !contentType.StartsWith(ContentTypeApplicationJson))
+                {
+                    return EmptyContent;
+                }
+
+                return new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, ContentTypeApplicationJson);
             }
 
-            return contentType.StartsWith(ContentTypeApplicationJson)
-                ? new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, ContentTypeApplicationJson)
-                : new StringContent(string.Empty);
+            
+            var httpContent = new StreamContent(executionData.Context.Request.Body);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+
+            return httpContent;
         }
 
         private async Task WriteResponseAsync(HttpResponse response, HttpResponseMessage httpResponse,
             ExecutionData executionData)
         {
             var traceId = executionData.Context.Request.HttpContext.TraceIdentifier;
-            var method = executionData.Route.Method.ToUpperInvariant();
+            var method = executionData.Context.Request.Method;
             if (!string.IsNullOrWhiteSpace(executionData.RequestId))
             {
                 response.Headers.Add("Request-ID", executionData.RequestId);
             }
 
-            if (!string.IsNullOrWhiteSpace(executionData.ResourceId) && executionData.Route.Method == "post")
+            if (!string.IsNullOrWhiteSpace(executionData.ResourceId) && executionData.Context.Request.Method is "POST")
             {
                 response.Headers.Add("Resource-ID", executionData.ResourceId);
             }
@@ -205,7 +194,7 @@ namespace Ntrada.Handlers
         {
             var onError = executionData.Route.OnError;
             var content = await httpResponse.Content.ReadAsStringAsync();
-            if (executionData.Route.Method == "get" && !response.Headers.ContainsKey(ContentTypeHeader))
+            if (executionData.Context.Request.Method is "GET" && !response.Headers.ContainsKey(ContentTypeHeader))
             {
                 response.Headers[ContentTypeHeader] = ContentTypeApplicationJson;
             }
@@ -282,7 +271,7 @@ namespace Ntrada.Handlers
                 response.Headers.Add(header.Key, values.ToArray());
             }
 
-            if (executionData.Route.Method == "get" && !response.Headers.ContainsKey(ContentTypeHeader))
+            if (executionData.Context.Request.Method is "GET" && !response.Headers.ContainsKey(ContentTypeHeader))
             {
                 response.Headers[ContentTypeHeader] = ContentTypeApplicationJson;
             }
