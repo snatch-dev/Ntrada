@@ -11,7 +11,7 @@
 
 **`Ntrada`** (*entrada* is a spanish word meaning an entrance).
 
-The aim of this project is to provide an easily configurable (via YML) and extendable (e.g. RabbitMQ integration) API Gateway, that requires no coding whatsoever and can be started via Docker or as .NET Core application.
+The aim of this project is to provide an easily configurable (via YML) and extendable (e.g. RabbitMQ integration, OpenTracing etc.) API Gateway, that requires no coding whatsoever and can be started via Docker or as .NET Core application.
 
 ### Features:
 
@@ -19,6 +19,7 @@ The aim of this project is to provide an easily configurable (via YML) and exten
 * Separate modules definitions
 * Static content
 * Routing
+* Match-all methods generic templates
 * Request forwarding
 * Headers forwarding
 * Custom request bodies
@@ -120,6 +121,9 @@ forwardRequestHeaders: true
 forwardResponseHeaders: true
 generateRequestId: true
 generateTraceId: true
+resourceId:
+  generate: true
+  property: id
 useLocalUrl: true
 loadBalancer:
   enabled: false
@@ -202,4 +206,20 @@ modules:
         config:
           exchange: sample.exchange
           routing_key: sample.routing.key
+
+  orders:
+    routes:
+      - upstream: /orders
+        methods:
+          - GET
+          - POST
+          - DELETE
+        matchAll: true
+        use: downstream
+        downstream: orders-service/orders
+          
+    services:
+      orders-service:
+        localUrl: localhost:5001
+        url: orders-service
 ```
