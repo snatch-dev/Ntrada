@@ -79,37 +79,45 @@ namespace Ntrada.Handlers
         {
             var httpClient = _serviceProvider.GetService<IHttpClientFactory>().CreateClient("ntrada");
             var method = (string.IsNullOrWhiteSpace(executionData.Route.DownstreamMethod)
-                    ? executionData.Context.Request.Method
-                    : executionData.Route.DownstreamMethod)
-                .ToLowerInvariant();
+                ? executionData.Context.Request.Method
+                : executionData.Route.DownstreamMethod).ToLowerInvariant();
 
-            if (executionData.Route.ForwardRequestHeaders == true ||
-                (_options.ForwardRequestHeaders == true && executionData.Route.ForwardRequestHeaders != false))
+            var request = new HttpRequestMessage
             {
-                foreach (var header in executionData.Context.Request.Headers)
+                RequestUri = new Uri(executionData.Downstream)
+            };
+            
+            if (executionData.Route.ForwardRequestHeaders == true ||
+                _options.ForwardRequestHeaders == true && executionData.Route.ForwardRequestHeaders != false)
+            {
+                foreach (var (key, value) in executionData.Context.Request.Headers)
                 {
-                    httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value.ToArray());
+                    request.Headers.TryAddWithoutValidation(key, value.ToArray());
                 }
             }
 
             var requestHeaders = executionData.Route.RequestHeaders is null ||
                                  !executionData.Route.RequestHeaders.Any()
-                ? _options.RequestHeaders ?? new Dictionary<string, string>()
+                ? _options.RequestHeaders
                 : executionData.Route.RequestHeaders;
-            foreach (var header in requestHeaders)
+
+            if (requestHeaders is {})
             {
-                if (!string.IsNullOrWhiteSpace(header.Value))
+                foreach (var (key, value) in requestHeaders)
                 {
-                    httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, header.Value);
-                    continue;
-                }
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        request.Headers.TryAddWithoutValidation(key, value);
+                        continue;
+                    }
 
-                if (!executionData.Context.Request.Headers.TryGetValue(header.Key, out var values))
-                {
-                    continue;
-                }
+                    if (!executionData.Context.Request.Headers.TryGetValue(key, out var values))
+                    {
+                        continue;
+                    }
 
-                httpClient.DefaultRequestHeaders.TryAddWithoutValidation(header.Key, values.ToArray());
+                    request.Headers.TryAddWithoutValidation(key, values.ToArray());
+                }
             }
 
             if (!(_beforeHttpClientRequestHooks is null))
@@ -120,19 +128,54 @@ namespace Ntrada.Handlers
                 }
             }
 
+            var includeBody = false;
             switch (method)
             {
                 case "get":
-                    return () => httpClient.GetAsync(executionData.Downstream);
+                    request.Method = HttpMethod.Get;
+                    break;
                 case "post":
-                    return () => httpClient.PostAsync(executionData.Downstream, GetHttpContent(executionData));
+                    request.Method = HttpMethod.Post;
+                    includeBody = true;
+                    break;
                 case "put":
-                    return () => httpClient.PutAsync(executionData.Downstream, GetHttpContent(executionData));
+                    request.Method = HttpMethod.Put;
+                    includeBody = true;
+                    break;
+                case "patch":
+                    request.Method = HttpMethod.Patch;
+                    includeBody = true;
+                    break;
                 case "delete":
-                    return () => httpClient.DeleteAsync(executionData.Downstream);
+                    request.Method = HttpMethod.Delete;
+                    break;
+                case "head":
+                    request.Method = HttpMethod.Head;
+                    break;
+                case "options":
+                    request.Method = HttpMethod.Options;
+                    break;
+                case "trace":
+                    request.Method = HttpMethod.Trace;
+                    break;
                 default:
                     return null;
             }
+
+            if (includeBody)
+            {
+                request.Content = GetHttpContent(executionData);
+            }
+
+            if (_beforeHttpClientRequestHooks is {})
+            {
+                foreach (var hook in _beforeHttpClientRequestHooks)
+                {
+                    hook?.Invoke(httpClient, executionData);
+                }
+            }
+
+            return () => httpClient.SendAsync(request);
         }
 
         private static HttpContent GetHttpContent(ExecutionData executionData)
@@ -148,11 +191,14 @@ namespace Ntrada.Handlers
 
                 return new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, ContentTypeApplicationJson);
             }
-
             
-            var httpContent = new StreamContent(executionData.Context.Request.Body);
-            httpContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+            if (executionData.Context.Request.Body is null || executionData.Context.Request.Body.Length == 0)
+            {
+                return EmptyContent;
+            }
 
+            using var httpContent = new StreamContent(executionData.Context.Request.Body);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
             return httpContent;
         }
 

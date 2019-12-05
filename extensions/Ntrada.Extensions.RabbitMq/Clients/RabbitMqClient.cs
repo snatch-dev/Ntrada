@@ -35,45 +35,43 @@ namespace Ntrada.Extensions.RabbitMq.Clients
             string correlationId = null, string spanContext = null, object messageContext = null,
             IDictionary<string, object> headers = null)
         {
-            using (var channel = _connection.CreateModel())
+            using var channel = _connection.CreateModel();
+            var json = JsonConvert.SerializeObject(message);
+            var body = Encoding.UTF8.GetBytes(json);
+            var properties = channel.CreateBasicProperties();
+            properties.MessageId = string.IsNullOrWhiteSpace(messageId)
+                ? Guid.NewGuid().ToString("N")
+                : messageId;
+            properties.CorrelationId = string.IsNullOrWhiteSpace(correlationId)
+                ? Guid.NewGuid().ToString("N")
+                : correlationId;
+            properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            properties.Headers = new Dictionary<string, object>();
+            if (_messageContextEnabled)
             {
-                var json = JsonConvert.SerializeObject(message);
-                var body = Encoding.UTF8.GetBytes(json);
-                var properties = channel.CreateBasicProperties();
-                properties.MessageId = string.IsNullOrWhiteSpace(messageId)
-                    ? Guid.NewGuid().ToString("N")
-                    : messageId;
-                properties.CorrelationId = string.IsNullOrWhiteSpace(correlationId)
-                    ? Guid.NewGuid().ToString("N")
-                    : correlationId;
-                properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-                properties.Headers = new Dictionary<string, object>();
-                if (_messageContextEnabled)
-                {
-                    IncludeMessageContext(messageContext, properties);
-                }
-
-                if (!string.IsNullOrWhiteSpace(spanContext))
-                {
-                    properties.Headers.Add(_spanContextHeader, spanContext);
-                }
-
-                if (!(headers is null))
-                {
-                    foreach (var (key, value) in headers)
-                    {
-                        properties.Headers.TryAdd(key, value);
-                    }
-                }
-
-                if (_loggerEnabled)
-                {
-                    _logger.LogInformation($"Sending a message with routing key: '{routingKey}' to the exchange: " +
-                                           $"'{exchange}' [message id: '{properties.MessageId}', correlation id: '{properties.CorrelationId}'].");
-                }
-
-                channel.BasicPublish(exchange, routingKey, properties, body);
+                IncludeMessageContext(messageContext, properties);
             }
+
+            if (!string.IsNullOrWhiteSpace(spanContext))
+            {
+                properties.Headers.Add(_spanContextHeader, spanContext);
+            }
+
+            if (!(headers is null))
+            {
+                foreach (var (key, value) in headers)
+                {
+                    properties.Headers.TryAdd(key, value);
+                }
+            }
+
+            if (_loggerEnabled)
+            {
+                _logger.LogInformation($"Sending a message with routing key: '{routingKey}' to the exchange: " +
+                                       $"'{exchange}' [message id: '{properties.MessageId}', correlation id: '{properties.CorrelationId}'].");
+            }
+
+            channel.BasicPublish(exchange, routingKey, properties, body);
         }
 
         private void IncludeMessageContext(object context, IBasicProperties properties)

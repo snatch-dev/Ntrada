@@ -10,6 +10,7 @@ namespace Ntrada.Requests
 {
     internal sealed class RequestProcessor : IRequestProcessor
     {
+        private static readonly string[] SkipPayloadMethods = {"get", "delete", "head", "options", "trace"};
         private static readonly IDictionary<string, string> EmptyClaims = new Dictionary<string, string>();
         private const string ContentTypeApplicationJson = "application/json";
         private const string ContentTypeTextPlain = "text/plain";
@@ -41,9 +42,7 @@ namespace Ntrada.Requests
 
             var (requestId, resourceId, traceId) = GenerateIds(context.Request, routeConfig);
             var route = routeConfig.Route;
-            var skipPayload = route.Use == "downstream" && (route.DownstreamMethod == "get" ||
-                                                            route.DownstreamMethod == "delete");
-
+            var skipPayload = route.Use == "downstream" && SkipPayloadMethods.Contains(route.DownstreamMethod);
             var routeData = context.GetRouteData();
             var hasTransformations = !skipPayload && _payloadTransformer.HasTransformations(resourceId, route);
             var payload = hasTransformations
