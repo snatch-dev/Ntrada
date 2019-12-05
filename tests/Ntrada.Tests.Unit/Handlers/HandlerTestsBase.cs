@@ -1,7 +1,9 @@
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using NSubstitute;
 
 namespace Ntrada.Tests.Unit.Handlers
 {
@@ -17,6 +19,8 @@ namespace Ntrada.Tests.Unit.Handlers
         protected readonly HttpContext HttpContext;
         protected readonly RouteConfig RouteConfig;
         protected readonly RouteData RouteData;
+        protected readonly IRequestProcessor RequestProcessor;
+        protected readonly IServiceProvider ServiceProvider;
         protected IHandler Handler;
 
         protected HandlerTestsBase()
@@ -24,6 +28,8 @@ namespace Ntrada.Tests.Unit.Handlers
             HttpContext = new DefaultHttpContext();
             RouteConfig = new RouteConfig();
             RouteData = new RouteData();
+            RequestProcessor = Substitute.For<IRequestProcessor>();
+            ServiceProvider = Substitute.For<IServiceProvider>();
             InitHandler();
         }
 

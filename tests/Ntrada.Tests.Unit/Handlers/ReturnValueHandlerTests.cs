@@ -31,7 +31,7 @@ namespace Ntrada.Tests.Unit.Handlers
 
         protected override void InitHandler()
         {
-            Handler = new ReturnValueHandler();
+            Handler = new ReturnValueHandler(RequestProcessor, ServiceProvider);
         }
 
         #endregion

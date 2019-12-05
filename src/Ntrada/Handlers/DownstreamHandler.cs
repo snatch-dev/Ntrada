@@ -25,22 +25,29 @@ namespace Ntrada.Handlers
 
         private static readonly HttpContent EmptyContent =
             new StringContent("{}", Encoding.UTF8, ContentTypeApplicationJson);
-        private readonly IServiceProvider _serviceProvider;
         private readonly IRequestProcessor _requestProcessor;
         private readonly IPayloadValidator _payloadValidator;
         private readonly NtradaOptions _options;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<DownstreamHandler> _logger;
-        private readonly IEnumerable<IBeforeHttpClientRequestHook> _beforeHttpClientRequestHooks;
+        private readonly IEnumerable<IRequestHook> _requestHooks;
+        private readonly IEnumerable<IResponseHook> _responseHooks;
+        private readonly IEnumerable<IHttpRequestHook> _httpRequestHooks;
+        private readonly IEnumerable<IHttpResponseHook> _httpResponseHooks;
 
         public DownstreamHandler(IServiceProvider serviceProvider, IRequestProcessor requestProcessor,
-            IPayloadValidator payloadValidator, NtradaOptions options, ILogger<DownstreamHandler> logger)
+            IPayloadValidator payloadValidator, NtradaOptions options, IHttpClientFactory httpClientFactory,
+            ILogger<DownstreamHandler> logger)
         {
-            _serviceProvider = serviceProvider;
             _requestProcessor = requestProcessor;
             _payloadValidator = payloadValidator;
             _options = options;
+            _httpClientFactory = httpClientFactory;
             _logger = logger;
-            _beforeHttpClientRequestHooks = _serviceProvider.GetServices<IBeforeHttpClientRequestHook>();
+            _requestHooks = serviceProvider.GetServices<IRequestHook>();
+            _responseHooks = serviceProvider.GetServices<IResponseHook>();
+            _httpRequestHooks = serviceProvider.GetServices<IHttpRequestHook>();
+            _httpResponseHooks = serviceProvider.GetServices<IHttpResponseHook>();
         }
 
         public string GetInfo(Route route) => $"call the downstream: '{route.Downstream}'";
@@ -53,6 +60,19 @@ namespace Ntrada.Handlers
             }
 
             var executionData = await _requestProcessor.ProcessAsync(config, context);
+            if (_requestHooks is {})
+            {
+                foreach (var hook in _requestHooks)
+                {
+                    if (hook is null)
+                    {
+                        continue;
+                    }
+
+                    await hook.InvokeAsync(context.Request, executionData);
+                }
+            }
+            
             if (!executionData.IsPayloadValid)
             {
                 await _payloadValidator.TryValidate(executionData, context.Response);
@@ -66,18 +86,21 @@ namespace Ntrada.Handlers
             
             _logger.LogInformation($"Sending HTTP {context.Request.Method} request to: {config.Downstream} " +
                                    $"[Trace ID: {context.TraceIdentifier}]");
-            var httpResponse = SendRequestAsync(executionData);
-            if (httpResponse is null)
+            
+            var response = await SendRequestAsync(executionData);
+            if (response is null)
             {
+                _logger.LogWarning($"Did not receive HTTP response for: {executionData.Route.Downstream}");
+
                 return;
             }
-
-            await WriteResponseAsync(context.Response, await httpResponse(), executionData);
+            
+            await WriteResponseAsync(context.Response, await response(), executionData);
         }
 
-        private Func<Task<HttpResponseMessage>> SendRequestAsync(ExecutionData executionData)
+        private async Task<Func<Task<HttpResponseMessage>>> SendRequestAsync(ExecutionData executionData)
         {
-            var httpClient = _serviceProvider.GetService<IHttpClientFactory>().CreateClient("ntrada");
+            var httpClient = _httpClientFactory.CreateClient("ntrada");
             var method = (string.IsNullOrWhiteSpace(executionData.Route.DownstreamMethod)
                 ? executionData.Context.Request.Method
                 : executionData.Route.DownstreamMethod).ToLowerInvariant();
@@ -86,7 +109,7 @@ namespace Ntrada.Handlers
             {
                 RequestUri = new Uri(executionData.Downstream)
             };
-            
+
             if (executionData.Route.ForwardRequestHeaders == true ||
                 _options.ForwardRequestHeaders == true && executionData.Route.ForwardRequestHeaders != false)
             {
@@ -117,14 +140,6 @@ namespace Ntrada.Handlers
                     }
 
                     request.Headers.TryAddWithoutValidation(key, values.ToArray());
-                }
-            }
-
-            if (!(_beforeHttpClientRequestHooks is null))
-            {
-                foreach (var hook in _beforeHttpClientRequestHooks)
-                {
-                    hook?.Invoke(httpClient, executionData);
                 }
             }
 
@@ -166,12 +181,17 @@ namespace Ntrada.Handlers
             {
                 request.Content = GetHttpContent(executionData);
             }
-
-            if (_beforeHttpClientRequestHooks is {})
+            
+            if (_httpRequestHooks is {})
             {
-                foreach (var hook in _beforeHttpClientRequestHooks)
+                foreach (var hook in _httpRequestHooks)
                 {
-                    hook?.Invoke(httpClient, executionData);
+                    if (hook is null)
+                    {
+                        continue;
+                    }
+
+                    await hook.InvokeAsync(request, executionData);
                 }
             }
 
@@ -192,7 +212,7 @@ namespace Ntrada.Handlers
                 return new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, ContentTypeApplicationJson);
             }
             
-            if (executionData.Context.Request.Body is null || executionData.Context.Request.Body.Length == 0)
+            if (executionData.Context.Request.Body is null)
             {
                 return EmptyContent;
             }
@@ -221,6 +241,32 @@ namespace Ntrada.Handlers
             {
                 response.Headers.Add("Trace-ID", executionData.TraceId);
             }
+            
+            if (_httpResponseHooks is {})
+            {
+                foreach (var hook in _httpResponseHooks)
+                {
+                    if (hook is null)
+                    {
+                        continue;
+                    }
+
+                    await hook.InvokeAsync(httpResponse, executionData);
+                }
+            }
+            
+            if (_responseHooks is {})
+            {
+                foreach (var hook in _responseHooks)
+                {
+                    if (hook is null)
+                    {
+                        continue;
+                    }
+
+                    await hook.InvokeAsync(response, executionData);
+                }
+            }
 
             if (!httpResponse.IsSuccessStatusCode)
             {
@@ -232,6 +278,7 @@ namespace Ntrada.Handlers
 
             _logger.LogInformation($"Received the successful response ({httpResponse.StatusCode}) to HTTP " +
                                    $"{method} request from:{executionData.Route.Downstream} [Trace ID: {traceId}]");
+            
             await SetSuccessResponseAsync(response, httpResponse, executionData);
         }
 
