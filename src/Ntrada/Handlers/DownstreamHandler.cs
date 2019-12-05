@@ -95,10 +95,10 @@ namespace Ntrada.Handlers
                 return;
             }
             
-            await WriteResponseAsync(context.Response, await response(), executionData);
+            await WriteResponseAsync(context.Response, response, executionData);
         }
 
-        private async Task<Func<Task<HttpResponseMessage>>> SendRequestAsync(ExecutionData executionData)
+        private async Task<HttpResponseMessage> SendRequestAsync(ExecutionData executionData)
         {
             var httpClient = _httpClientFactory.CreateClient("ntrada");
             var method = (string.IsNullOrWhiteSpace(executionData.Route.DownstreamMethod)
@@ -176,11 +176,6 @@ namespace Ntrada.Handlers
                 default:
                     return null;
             }
-
-            if (includeBody)
-            {
-                request.Content = GetHttpContent(executionData);
-            }
             
             if (_httpRequestHooks is {})
             {
@@ -194,8 +189,15 @@ namespace Ntrada.Handlers
                     await hook.InvokeAsync(request, executionData);
                 }
             }
+            
+            if (!includeBody)
+            {
+                return await httpClient.SendAsync(request);
+            }
 
-            return () => httpClient.SendAsync(request);
+            using var content = GetHttpContent(executionData);
+            request.Content = content;
+            return await httpClient.SendAsync(request);
         }
 
         private static HttpContent GetHttpContent(ExecutionData executionData)
@@ -217,7 +219,7 @@ namespace Ntrada.Handlers
                 return EmptyContent;
             }
 
-            using var httpContent = new StreamContent(executionData.Context.Request.Body);
+            var httpContent = new StreamContent(executionData.Context.Request.Body);
             httpContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
             return httpContent;
         }
