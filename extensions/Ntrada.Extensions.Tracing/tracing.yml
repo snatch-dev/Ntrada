@@ -5,3 +5,6 @@ tracing:
   maxPacketSize: 0
   sampler: const
   useEmptyTracer: false
+  excludePaths:
+    - /ping
+    - /metrics

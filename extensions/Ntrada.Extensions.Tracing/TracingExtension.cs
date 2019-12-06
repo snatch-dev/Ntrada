@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTracing;
+using OpenTracing.Contrib.NetCore.Configuration;
 using OpenTracing.Util;
 
 namespace Ntrada.Extensions.Tracing
@@ -25,6 +26,17 @@ namespace Ntrada.Extensions.Tracing
                 var defaultTracer = DefaultTracer.Create();
                 services.AddSingleton(defaultTracer);
                 return;
+            }
+            
+            if (options.ExcludePaths is {})
+            {
+                services.Configure<AspNetCoreDiagnosticOptions>(o =>
+                {
+                    foreach (var path in options.ExcludePaths)
+                    {
+                        o.Hosting.IgnorePatterns.Add(x => x.Request.Path == path);
+                    }
+                });
             }
 
             services.AddSingleton<ITracer>(sp =>

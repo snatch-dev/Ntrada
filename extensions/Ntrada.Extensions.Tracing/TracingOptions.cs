@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Ntrada.Extensions.Tracing
 {
     public class TracingOptions : IOptions
@@ -10,5 +12,6 @@ namespace Ntrada.Extensions.Tracing
         public string Sampler { get; set; }
         public double MaxTracesPerSecond { get; set; } = 5;
         public double SamplingRate { get; set; } = 0.2;
+        public IEnumerable<string> ExcludePaths { get; set; }
     }
 }
