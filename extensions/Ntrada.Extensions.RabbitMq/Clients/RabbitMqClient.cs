@@ -46,7 +46,7 @@ namespace Ntrada.Extensions.RabbitMq.Clients
                 ? Guid.NewGuid().ToString("N")
                 : correlationId;
             properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-            properties.Headers = headers ?? new Dictionary<string, object>();
+            properties.Headers = new Dictionary<string, object>();
             properties.UserId = userId;
             if (_messageContextEnabled)
             {
@@ -58,10 +58,15 @@ namespace Ntrada.Extensions.RabbitMq.Clients
                 properties.Headers.Add(_spanContextHeader, spanContext);
             }
 
-            if (!(headers is null))
+            if (headers is {})
             {
                 foreach (var (key, value) in headers)
                 {
+                    if (string.IsNullOrWhiteSpace(key) || value is null)
+                    {
+                        continue;
+                    }
+                    
                     properties.Headers.TryAdd(key, value);
                 }
             }
@@ -77,7 +82,7 @@ namespace Ntrada.Extensions.RabbitMq.Clients
 
         private void IncludeMessageContext(object context, IBasicProperties properties)
         {
-            if (!(context is null))
+            if (context is {})
             {
                 properties.Headers.Add(_messageContextHeader, JsonConvert.SerializeObject(context));
                 return;
