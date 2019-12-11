@@ -19,6 +19,7 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
         private readonly IRequestProcessor _requestProcessor;
         private readonly IPayloadBuilder _payloadBuilder;
         private readonly IPayloadValidator _payloadValidator;
+        private readonly RabbitMqOptions _options;
         private readonly IContextBuilder _contextBuilder;
         private readonly ISpanContextBuilder _spanContextBuilder;
         private readonly IEnumerable<IRequestHook> _requestHooks;
@@ -26,7 +27,7 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
 
         public RabbitMqHandler(IRabbitMqClient rabbitMqClient, IContextBuilder contextBuilder,
             ISpanContextBuilder spanContextBuilder, IRequestProcessor requestProcessor, IPayloadBuilder payloadBuilder,
-            IPayloadValidator payloadValidator, IServiceProvider serviceProvider)
+            IPayloadValidator payloadValidator, RabbitMqOptions options, IServiceProvider serviceProvider)
         {
             _rabbitMqClient = rabbitMqClient;
             _contextBuilder = contextBuilder;
@@ -34,6 +35,7 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
             _requestProcessor = requestProcessor;
             _payloadBuilder = payloadBuilder;
             _payloadValidator = payloadValidator;
+            _options = options;
             _requestHooks = serviceProvider.GetServices<IRequestHook>();
             _responseHooks = serviceProvider.GetServices<IResponseHook>();
         }
@@ -72,10 +74,12 @@ namespace Ntrada.Extensions.RabbitMq.Handlers
             var messageContext = _contextBuilder.Build(executionData);
             var hasTraceId = !string.IsNullOrWhiteSpace(traceId);
             var spanContext = _spanContextBuilder.Build(executionData);
+            var messageId = Guid.NewGuid().ToString("N");
             var correlationId = executionData.RequestId;
+            var userId = executionData.UserId;
 
-            _rabbitMqClient.Send(message, routingKey, exchange, correlationId: correlationId, spanContext: spanContext,
-                messageContext: messageContext);
+            _rabbitMqClient.Send(message, routingKey, exchange, messageId, correlationId, spanContext,
+                messageContext, _options.Headers, userId);
 
             if (!string.IsNullOrWhiteSpace(executionData.RequestId))
             {

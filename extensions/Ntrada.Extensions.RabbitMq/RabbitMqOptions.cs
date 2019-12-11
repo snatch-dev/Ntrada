@@ -22,6 +22,7 @@ namespace Ntrada.Extensions.RabbitMq
         public MessageContextOptions MessageContext { get; set; }
         public LoggerOptions Logger { get; set; }
         public string SpanContextHeader { get; set; }
+        public IDictionary<string, object> Headers { get; set; }
 
         public class SslOptions
         {
