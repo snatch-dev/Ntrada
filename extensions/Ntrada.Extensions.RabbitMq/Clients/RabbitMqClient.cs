@@ -33,7 +33,7 @@ namespace Ntrada.Extensions.RabbitMq.Clients
 
         public void Send(object message, string routingKey, string exchange, string messageId = null,
             string correlationId = null, string spanContext = null, object messageContext = null,
-            IDictionary<string, object> headers = null, string userId = null)
+            IDictionary<string, object> headers = null)
         {
             using var channel = _connection.CreateModel();
             var json = JsonConvert.SerializeObject(message);
@@ -47,7 +47,6 @@ namespace Ntrada.Extensions.RabbitMq.Clients
                 : correlationId;
             properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             properties.Headers = new Dictionary<string, object>();
-            properties.UserId = userId;
             if (_messageContextEnabled)
             {
                 IncludeMessageContext(messageContext, properties);
