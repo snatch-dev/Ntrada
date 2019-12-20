@@ -419,7 +419,7 @@ namespace Ntrada.Handlers
                 }
             }
 
-            if (!(onSuccess.Data is null))
+            if (onSuccess.Data is {})
             {
                 await response.WriteAsync(onSuccess.Data.ToString());
             }

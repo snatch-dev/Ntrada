@@ -171,21 +171,26 @@ https://github.com/snatch-dev/Ntrada
             var options = app.ApplicationServices.GetRequiredService<NtradaOptions>();
             if (options.Auth?.Enabled == true)
             {
-                logger.LogInformation($"Authentication is enabled.");
+                logger.LogInformation("Authentication is enabled.");
                 app.UseAuthentication();
             }
             else
             {
-                logger.LogInformation($"Authentication is disabled.");
+                logger.LogInformation("Authentication is disabled.");
             }
 
             if (options.UseForwardedHeaders)
             {
-                logger.LogInformation("Enabled headers forwarding.");
+                logger.LogInformation("Headers forwarding is enabled.");
                 app.UseForwardedHeaders(new ForwardedHeadersOptions
                 {
                     ForwardedHeaders = ForwardedHeaders.All
                 });
+            }
+
+            if (options.LoadBalancer?.Enabled == true)
+            {
+                logger.LogInformation($"Load balancer is enabled: {options.LoadBalancer.Url}");
             }
             
             app.UseExtensions();

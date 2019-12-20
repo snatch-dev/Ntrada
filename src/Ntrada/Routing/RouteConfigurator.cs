@@ -59,7 +59,7 @@ namespace Ntrada.Routing
             {
                 if (string.IsNullOrWhiteSpace(service.LocalUrl))
                 {
-                    throw new ArgumentException($"Local URL for: '{basePath}' cannot be empty if use_local_url = true.",
+                    throw new ArgumentException($"Local URL for: '{basePath}' cannot be empty if useLocalUrl = true.",
                         nameof(service.LocalUrl));
                 }
 
@@ -82,7 +82,7 @@ namespace Ntrada.Routing
             }
 
             var serviceUrl = service.Url.StartsWith("/") ? service.Url.Substring(1) : service.Url;
-            var loadBalancedServiceUrl = $"{loadBalancerUrl}/{serviceUrl}";
+            var loadBalancedServiceUrl = $"{loadBalancerUrl}{serviceUrl}";
 
             return SetProtocol(route.Downstream.Replace(basePath, loadBalancedServiceUrl));
         }
