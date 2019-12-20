@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Ntrada.Configuration;
 using Ntrada.Options;
 
@@ -6,7 +7,6 @@ namespace Ntrada.Routing
 {
     internal sealed class RouteConfigurator : IRouteConfigurator
     {
-        private static readonly string LoadBalancerPattern = "load_balancer";
         private readonly NtradaOptions _options;
 
         public RouteConfigurator(NtradaOptions options)
@@ -36,6 +36,8 @@ namespace Ntrada.Routing
                 {
                     throw new ArgumentException("Load balancer URL cannot be empty.", nameof(loadBalancerUrl));
                 }
+
+                loadBalancerUrl = loadBalancerUrl.EndsWith("/") ? loadBalancerUrl : $"{loadBalancerUrl}/";
             }
 
             var basePath = route.Downstream.Contains("/")
@@ -79,14 +81,10 @@ namespace Ntrada.Routing
                 return SetProtocol(route.Downstream.Replace(basePath, service.Url));
             }
 
-            if (!service.Url.StartsWith(LoadBalancerPattern, StringComparison.InvariantCultureIgnoreCase))
-            {
-                return SetProtocol(route.Downstream.Replace(basePath, service.Url));
-            }
+            var serviceUrl = service.Url.StartsWith("/") ? service.Url.Substring(1) : service.Url;
+            var loadBalancedServiceUrl = $"{loadBalancerUrl}/{serviceUrl}";
 
-            var serviceUrl = service.Url.Replace(LoadBalancerPattern, _options.LoadBalancer.Url);
-
-            return SetProtocol(route.Downstream.Replace(basePath, serviceUrl));
+            return SetProtocol(route.Downstream.Replace(basePath, loadBalancedServiceUrl));
         }
 
         private static string SetProtocol(string service) => service.StartsWith("http") ? service : $"http://{service}";

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -19,7 +20,14 @@ namespace Ntrada.Samples.Api
                 {
                     webBuilder.ConfigureAppConfiguration(builder =>
                     {
-                        var configPath = args?.FirstOrDefault() ?? "ntrada.yml";
+                        const string extension = "yml";
+                        var ntradaConfig = Environment.GetEnvironmentVariable("NTRADA_CONFIG");
+                        var configPath = args?.FirstOrDefault() ?? ntradaConfig ?? $"ntrada.{extension}";
+                        if (!configPath.EndsWith($".{extension}"))
+                        {
+                            configPath += $".{extension}";
+                        }
+
                         builder.AddYamlFile(configPath, false);
                     }).UseStartup<Startup>();
                 });

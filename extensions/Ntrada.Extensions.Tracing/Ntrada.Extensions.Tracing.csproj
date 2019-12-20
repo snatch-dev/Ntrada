@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp3.0</TargetFramework>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
 
@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(Configuration)' == 'Release'">
-        <PackageReference Include="Ntrada" Version="0.3.*" />
+        <PackageReference Include="Ntrada" Version="0.4.*" />
     </ItemGroup>
 
 </Project>

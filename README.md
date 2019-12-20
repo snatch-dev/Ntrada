@@ -58,7 +58,7 @@ Start via Docker:
 
 ```
 docker build -t ntrada .
-docker run -it --rm --name ntrada -p 5000:5000 ntrada
+docker run -it --rm --name ntrada -p 5000:80 ntrada
 curl localhost:5000
 ```
 
