@@ -81,6 +81,14 @@ extensions:
       enabled: true
     spanContextHeader: span_context
 
+  swagger:
+    name: v1
+    reDocEnabled: false
+    title: API
+    version: v1
+    routePrefix: docs
+    includeSecurity: true
+
   tracing:
     serviceName: ntrada
     udpHost: localhost

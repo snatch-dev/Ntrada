@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+using Ntrada.Helpers;
 using Ntrada.Options;
+using Ntrada.WebApi;
 
 namespace Ntrada.Routing
 {
@@ -16,17 +19,19 @@ namespace Ntrada.Routing
         private readonly IRouteConfigurator _routeConfigurator;
         private readonly IRequestExecutionValidator _requestExecutionValidator;
         private readonly IUpstreamBuilder _upstreamBuilder;
+        private readonly WebApiEndpointDefinitions _definitions;
         private readonly NtradaOptions _options;
         private readonly IRequestHandlerManager _requestHandlerManager;
         private readonly ILogger<RouteProvider> _logger;
 
         public RouteProvider(NtradaOptions options, IRequestHandlerManager requestHandlerManager,
             IRouteConfigurator routeConfigurator, IRequestExecutionValidator requestExecutionValidator,
-            IUpstreamBuilder upstreamBuilder, ILogger<RouteProvider> logger)
+            IUpstreamBuilder upstreamBuilder, WebApiEndpointDefinitions definitions, ILogger<RouteProvider> logger)
         {
             _routeConfigurator = routeConfigurator;
             _requestExecutionValidator = requestExecutionValidator;
             _upstreamBuilder = upstreamBuilder;
+            _definitions = definitions;
             _options = options;
             _requestHandlerManager = requestHandlerManager;
             _logger = logger;
@@ -73,10 +78,11 @@ namespace Ntrada.Routing
 
                         route.Upstream = _upstreamBuilder.Build(module.Value, route);
                         var routeConfig = _routeConfigurator.Configure(module.Value, route);
-                        
+
                         if (!string.IsNullOrWhiteSpace(route.Method))
                         {
                             _methods[route.Method](routeBuilder, route.Upstream, routeConfig);
+                            AddEndpointDefinition(route.Method, route.Upstream);
                         }
 
                         if (route.Methods is null)
@@ -86,10 +92,33 @@ namespace Ntrada.Routing
 
                         foreach (var method in route.Methods)
                         {
-                            _methods[method.ToLowerInvariant()](routeBuilder, route.Upstream, routeConfig);
+                            var methodType = method.ToLowerInvariant();
+                            _methods[methodType](routeBuilder, route.Upstream, routeConfig);
+                            AddEndpointDefinition(methodType, route.Upstream);
                         }
                     }
                 }
             };
+        
+        private void AddEndpointDefinition(string method, string path)
+        {
+            // if (_definitions.Exists(d => d.Path == path))
+            // {
+            //     return;
+            // }
+            
+            _definitions.Add(new WebApiEndpointDefinition
+            {
+                Method = method,
+                Path = path,
+                Responses = new List<WebApiEndpointResponse>
+                {
+                    new WebApiEndpointResponse
+                    {
+                        StatusCode = 200
+                    }
+                }
+            });
+        }
     }
 }

@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Swagger\Ntrada.Extensions.Swagger.csproj" />
     <ProjectReference Include="..\..\src\Ntrada\Ntrada.csproj" />
     <ProjectReference Include="..\..\extensions\Ntrada.Extensions.Cors\Ntrada.Extensions.Cors.csproj" />
     <ProjectReference Include="..\..\extensions\Ntrada.Extensions.CustomErrors\Ntrada.Extensions.CustomErrors.csproj" />

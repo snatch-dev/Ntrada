@@ -15,6 +15,7 @@ using Ntrada.Handlers;
 using Ntrada.Options;
 using Ntrada.Requests;
 using Ntrada.Routing;
+using Ntrada.WebApi;
 using Polly;
 
 [assembly: InternalsVisibleTo("Ntrada.Tests.Unit")]
@@ -33,7 +34,6 @@ namespace Ntrada
  /___ API Gateway (Entrance) ___/
 
 
-https://snatch.dev
 https://github.com/snatch-dev/Ntrada
 ";
 
@@ -69,7 +69,8 @@ https://github.com/snatch-dev/Ntrada
         private static IServiceCollection AddCoreServices(this IServiceCollection services)
         {
             services.AddMvcCore()
-                .AddNewtonsoftJson(o => o.SerializerSettings.Formatting = Formatting.Indented);
+                .AddNewtonsoftJson(o => o.SerializerSettings.Formatting = Formatting.Indented)
+                .AddApiExplorer();
             
             return services;
         }
@@ -140,6 +141,7 @@ https://github.com/snatch-dev/Ntrada
             services.AddSingleton<IValueProvider, ValueProvider>();
             services.AddSingleton<DownstreamHandler>();
             services.AddSingleton<ReturnValueHandler>();
+            services.AddSingleton<WebApiEndpointDefinitions>();
             
             return services;
         }

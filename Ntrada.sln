@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ntrada.Extensions.Tracing",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ntrada.Samples.Services.Orders", "samples\Ntrada.Samples.Services.Orders\Ntrada.Samples.Services.Orders.csproj", "{790DE86C-8DF8-4476-BC2E-C7836CBBA1CE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ntrada.Extensions.Swagger", "extensions\Ntrada.Extensions.Swagger\Ntrada.Extensions.Swagger.csproj", "{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -178,6 +180,18 @@ Global
 		{790DE86C-8DF8-4476-BC2E-C7836CBBA1CE}.Release|x64.Build.0 = Release|Any CPU
 		{790DE86C-8DF8-4476-BC2E-C7836CBBA1CE}.Release|x86.ActiveCfg = Release|Any CPU
 		{790DE86C-8DF8-4476-BC2E-C7836CBBA1CE}.Release|x86.Build.0 = Release|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Debug|x64.Build.0 = Debug|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Debug|x86.Build.0 = Debug|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Release|x64.ActiveCfg = Release|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Release|x64.Build.0 = Release|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Release|x86.ActiveCfg = Release|Any CPU
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BD735FBA-1D9C-45AD-8BDD-1E89B059E4CC} = {10BC7168-BE16-4A3C-A7CC-F122C83E08F5}
@@ -191,5 +205,6 @@ Global
 		{29689A6F-5460-4100-B51A-78EF322DF5D5} = {6E8C9C7B-7249-41CD-A466-C11A8644400B}
 		{CC9A3D1E-84DC-43A2-9BC1-BBFE0DF471AF} = {6E8C9C7B-7249-41CD-A466-C11A8644400B}
 		{790DE86C-8DF8-4476-BC2E-C7836CBBA1CE} = {367233AC-1E0D-4FA2-8701-09702663DD54}
+		{63C2B069-50D1-46DD-96CF-B3C2A325A3A8} = {6E8C9C7B-7249-41CD-A466-C11A8644400B}
 	EndGlobalSection
 EndGlobal

@@ -8,7 +8,7 @@ using Route = Ntrada.Configuration.Route;
 
 namespace Ntrada.Extensions.RabbitMq.Handlers
 {
-    public sealed class RabbitMqHandler : IHandler
+    internal sealed class RabbitMqHandler : IHandler
     {
         private const string RequestIdHeader = "Request-ID";
         private const string ResourceIdHeader = "Resource-ID";
