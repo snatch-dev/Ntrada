@@ -22,26 +22,22 @@ namespace Ntrada.Routing
 
         public string Build(Module module, Route route)
         {
+            var path = module.Path;
             var upstream = string.IsNullOrWhiteSpace(route.Upstream) ? string.Empty : route.Upstream;
-            if (!string.IsNullOrWhiteSpace(module.Path))
+            if (!string.IsNullOrWhiteSpace(path))
             {
-                var modulePath = module.Path.EndsWith("/") ? module.Path : $"{module.Path}/";
-                if (upstream.StartsWith("/"))
+                var modulePath = path.EndsWith("/") ? path.Substring(0, path.Length - 1) : path;
+                if (!upstream.StartsWith("/"))
                 {
-                    upstream = upstream.Substring(1, upstream.Length - 1);
-                }
-
-                if (upstream.EndsWith("/"))
-                {
-                    upstream = upstream.Substring(0, upstream.Length - 1);
+                    upstream = $"/{upstream}";
                 }
 
                 upstream = $"{modulePath}{upstream}";
             }
 
-            if (string.IsNullOrWhiteSpace(upstream))
+            if (upstream.EndsWith("/"))
             {
-                upstream = "/";
+                upstream = upstream.Substring(0, upstream.Length - 1);
             }
 
             if (route.MatchAll)
@@ -75,7 +71,7 @@ namespace Ntrada.Routing
                 }
             }
 
-            _logger.LogInformation($"Added {isPublicInfo} route for upstream: [{string.Join(", ", methods)}]" +
+            _logger.LogInformation($"Added {isPublicInfo} route for upstream: [{string.Join(", ", methods)}] " +
                                    $"'{upstream}' -> {routeInfo}");
 
             return upstream;

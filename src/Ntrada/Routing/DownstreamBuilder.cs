@@ -35,20 +35,20 @@ namespace Ntrada.Routing
                 }
             }
 
-            foreach (var value in data.Values)
+            foreach (var (key, value) in data.Values)
             {
-                if (value.Value is null)
+                if (value is null)
                 {
                     continue;
                 }
 
-                if (value.Key is "url")
+                if (key is "url")
                 {
-                    stringBuilder.Append($"/{value.Value}");
+                    stringBuilder.Append($"/{value}");
                     continue;
                 }
                 
-                stringBuilder.Replace($"{{{value.Key}}}", value.Value.ToString());
+                stringBuilder.Replace($"{{{key}}}", value.ToString());
             }
 
             if (_options.PassQueryString == false || routeConfig.Route.PassQueryString == false)
