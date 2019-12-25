@@ -23,12 +23,21 @@ namespace Ntrada.Extensions.Swagger
                     case "get":
                         item.AddOperation(OperationType.Get, new OpenApiOperation());
                         return (item.Operations[OperationType.Get], OperationType.Get);
+                    case "head":
+                        item.AddOperation(OperationType.Head, new OpenApiOperation());
+                        return (item.Operations[OperationType.Head], OperationType.Head);
+                    case "options":
+                        item.AddOperation(OperationType.Options, new OpenApiOperation());
+                        return (item.Operations[OperationType.Options], OperationType.Options);
                     case "post":
                         item.AddOperation(OperationType.Post, new OpenApiOperation());
                         return (item.Operations[OperationType.Post], OperationType.Post);
                     case "put":
                         item.AddOperation(OperationType.Put, new OpenApiOperation());
                         return (item.Operations[OperationType.Put], OperationType.Put);
+                    case "patch":
+                        item.AddOperation(OperationType.Patch, new OpenApiOperation());
+                        return (item.Operations[OperationType.Patch], OperationType.Patch);
                     case "delete":
                         item.AddOperation(OperationType.Delete, new OpenApiOperation());
                         return (item.Operations[OperationType.Delete], OperationType.Delete);
@@ -102,7 +111,12 @@ namespace Ntrada.Extensions.Swagger
                     });
                 }
 
-                var path = $"{definition.Path}";
+                var path = definition.Path;
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    path = "/";
+                }
+
                 var (_, openApiPathItem) = swaggerDoc.Paths.SingleOrDefault(p => p.Key == path);
                 if (openApiPathItem is {})
                 {
