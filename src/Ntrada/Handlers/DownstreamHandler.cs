@@ -337,6 +337,22 @@ namespace Ntrada.Handlers
 
                     response.Headers.Add(header.Key, header.Value.ToArray());
                 }
+
+                // Fixed for missing Content-Type header
+                foreach (var header in httpResponse.Content.Headers)
+                {
+                    if (ExcludedResponseHeaders.Contains(header.Key.ToLowerInvariant()))
+                    {
+                        continue;
+                    }
+
+                    if (response.Headers.ContainsKey(header.Key))
+                    {
+                        continue;
+                    }
+
+                    response.Headers.Add(header.Key, header.Value.ToArray());
+                }
             }
 
             var responseHeaders = executionData.Route.ResponseHeaders is null ||
